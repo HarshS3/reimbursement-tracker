@@ -116,18 +116,18 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
   return (
     <div className="space-y-6">
       <Card>
-        <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-white mb-2">
+            <h2 className="text-2xl font-semibold text-heading mb-2">
               {isAdmin ? 'All Expenses' : 'My Expenses'}
             </h2>
-            <p className="body-text">
+            <p className="body-text text-body">
               {isAdmin ? 'View and manage all company expenses' : 'Track your submitted expense claims'}
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-semibold text-white">{filteredExpenses.length}</div>
-            <div className="text-sm text-white/60">
+            <div className="text-2xl font-semibold text-heading">{filteredExpenses.length}</div>
+            <div className="text-sm text-muted">
               {filteredExpenses.length === 1 ? 'Expense' : 'Expenses'}
             </div>
           </div>
@@ -181,7 +181,7 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
         ) : (
           <div className="space-y-4">
             {/* Header Row */}
-            <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-white/60 border-b border-white/10">
+            <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-muted border-b border-muted">
               <div>Employee</div>
               <div>Description</div>
               <div>Date</div>
@@ -201,29 +201,29 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
                 className="grid grid-cols-7 gap-4 p-4 glass-card rounded-xl hover:bg-white/5 transition-colors"
               >
                 <div className="flex items-center">
-                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center mr-2">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2">
                     <span className="text-white text-xs font-medium">
                       {(expense.paidBy || 'U').charAt(0)}
                     </span>
                   </div>
-                  <span className="text-white/80 text-sm">{expense.paidBy || 'Unknown'}</span>
+                  <span className="text-body text-sm">{expense.paidBy || 'Unknown'}</span>
                 </div>
 
                 <div className="flex items-center">
-                  <Receipt size={16} className="text-primary-400 mr-2" />
+                  <Receipt size={16} className="text-primary mr-2" />
                   <div>
-                    <div className="text-white font-medium truncate" title={expense.description}>
+                    <div className="text-heading font-medium truncate" title={expense.description}>
                       {expense.description}
                     </div>
-                    <div className="text-xs text-white/60">
+                    <div className="text-xs text-muted">
                       Submitted {formatDate(expense.submittedAt)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center">
-                  <Calendar size={14} className="text-white/40 mr-2" />
-                  <span className="text-white/80 text-sm">{formatDate(expense.date)}</span>
+                  <Calendar size={14} className="text-muted mr-2" />
+                  <span className="text-body text-sm">{formatDate(expense.date)}</span>
                 </div>
 
                 <div className="flex items-center">
@@ -243,14 +243,14 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
                 </div>
 
                 <div className="flex items-center">
-                  <CurrencyDollar size={14} className="text-primary-400 mr-1" />
+                  <CurrencyDollar size={14} className="text-primary mr-1" />
                   <div className="text-sm">
-                    <div className="text-white font-medium">
+                    <div className="text-heading font-medium">
                       {expense.currency} {parseFloat(expense.amount).toFixed(2)}
                     </div>
                     {expense.convertedAmount && (
-                      <div className="text-xs text-white/60">
-                        ≈ {expense.baseCurrency} {expense.convertedAmount.toFixed(2)}
+                      <div className="text-xs text-muted">
+                         {expense.baseCurrency} {expense.convertedAmount.toFixed(2)}
                       </div>
                     )}
                   </div>
@@ -261,12 +261,12 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
                     {expense.status}
                   </Badge>
                   {expense.status === 'approved' && (
-                    <div className="text-xs text-green-400">
+                    <div className="text-xs text-success">
                       {formatDate(expense.approvalHistory?.[0]?.approvedAt || expense.submittedAt)}
                     </div>
                   )}
                   {expense.status === 'rejected' && expense.approvalHistory?.[0]?.comments && (
-                    <div className="text-xs text-red-400" title={expense.approvalHistory[0].comments}>
+                    <div className="text-xs text-danger" title={expense.approvalHistory[0].comments}>
                       View reason
                     </div>
                   )}

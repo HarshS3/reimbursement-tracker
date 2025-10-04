@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Spline from '@splinetool/react-spline';
 import { useAuth } from '../../contexts/AuthContext';
+import STRINGS from '../../config/strings';
 import { Eye, EyeSlash } from 'phosphor-react';
 
 const SignIn = () => {
@@ -100,11 +101,11 @@ const SignIn = () => {
               alt="ClaimDoo Logo" 
               className="w-20 h-20 rounded-2xl mb-3 shadow-lg"
             />
-            <h1 className="text-3xl font-bold text-white">ClaimDoo</h1>
+            <h1 className="text-3xl font-bold text-heading">{STRINGS.appName}</h1>
           </div>
           
-          <h2 className="text-4xl font-light text-white mb-2">
-            Signin Page
+          <h2 className="text-4xl font-light text-heading mb-2">
+            {STRINGS.auth.signinTitle}
           </h2>
         </motion.div>
 
@@ -115,34 +116,34 @@ const SignIn = () => {
           className="glass-card p-8 rounded-3xl"
         >
           {/* Demo Credentials Info */}
-          <div className="mb-6 p-4 bg-primary-500/10 border border-primary-500/20 rounded-xl">
-            <p className="text-primary-400 font-semibold text-sm mb-2">Demo Accounts:</p>
-            <div className="space-y-1 text-xs text-white/70">
-              <p><span className="font-medium text-white/90">Admin:</span> admin@claimdoo.com / admin123</p>
-              <p><span className="font-medium text-white/90">Manager:</span> manager@claimdoo.com / manager123</p>
-              <p><span className="font-medium text-white/90">Employee:</span> sarah@claimdoo.com / employee123</p>
+          <div className="mb-6 p-4 bg-primary/10 border border-muted rounded-xl">
+            <p className="text-primary font-semibold text-sm mb-2">{STRINGS.auth.demoHeader}</p>
+            <div className="space-y-1 text-xs text-body">
+              {STRINGS.auth.demoAccounts.map((a) => (
+                <p key={a.email}><span className="font-medium text-heading">{a.role}:</span> {a.email} / {a.password}</p>
+              ))}
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {errors.general && (
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                <p className="text-red-400 text-sm">{errors.general}</p>
+                <p className="text-danger text-sm">{errors.general}</p>
               </div>
             )}
             
             {/* Email */}
             <div>
-              <label className="block text-white/90 text-sm font-medium mb-2">
-                Email
+              <label className="block text-body text-sm font-medium mb-2">
+                {STRINGS.auth.emailLabel}
               </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all"
-                placeholder="Enter your email"
+                className="w-full px-4 py-3 bg-white/5 border border-muted rounded-xl text-body placeholder-white/40 focus:outline-none" 
+                placeholder={STRINGS.auth.emailPlaceholder}
                 required
               />
               {errors.email && (
@@ -152,8 +153,8 @@ const SignIn = () => {
             
             {/* Password */}
             <div>
-              <label className="block text-white/90 text-sm font-medium mb-2">
-                Password
+              <label className="block text-body text-sm font-medium mb-2">
+                {STRINGS.auth.passwordLabel}
               </label>
               <div className="relative">
                 <input
@@ -161,14 +162,14 @@ const SignIn = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all"
-                  placeholder="Enter your password"
+                  className="w-full px-4 py-3 bg-white/5 border border-muted rounded-xl text-body placeholder-white/40 focus:outline-none"
+                  placeholder={STRINGS.auth.passwordPlaceholder}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-heading transition-colors"
                 >
                   {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
                 </button>
@@ -182,30 +183,30 @@ const SignIn = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#1e3a8a] text-white font-medium rounded-xl hover:bg-[#1e40af] hover:shadow-lg hover:shadow-blue-900/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary-hover transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Login'}
             </button>
           </form>
           
           {/* Footer Links */}
-          <div className="mt-6 space-y-3 text-center">
-            <p className="text-white/70 text-sm">
-              Don't have an account?{' '}
+            <div className="mt-6 space-y-3 text-center">
+              <p className="text-body text-sm">
+                Don't have an account?{' '}
+                <Link 
+                  to="/signup" 
+                  className="text-primary hover:text-primary-light font-medium transition-colors"
+                >
+                  {STRINGS.nav.signUp}
+                </Link>
+              </p>
               <Link 
-                to="/signup" 
-                className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
+                to="/forgot-password" 
+                className="block text-sm text-primary hover:text-primary-light transition-colors"
               >
-                Signup
+                {STRINGS.auth.forgotPassword}
               </Link>
-            </p>
-            <Link 
-              to="/forgot-password" 
-              className="block text-sm text-primary-400 hover:text-primary-300 transition-colors"
-            >
-              Forgot password?
-            </Link>
-          </div>
+            </div>
         </motion.div>
       </div>
     </div>

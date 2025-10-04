@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../../components/ui';
+import STRINGS from '../../config/strings';
+import { CATEGORIES, STATUS_TEXT } from '../../config/sampleData';
 import { 
   Upload,
   Plus,
@@ -180,11 +182,9 @@ const EmployeeExpenses = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-light text-white mb-2">
-            My Expenses
-          </h1>
-          <p className="text-white/60">
-            Upload receipts and submit expense claims
+          <h1 className="text-3xl font-light text-heading mb-2">{STRINGS.dashboard.myExpenses}</h1>
+          <p className="text-muted">
+            {STRINGS.dashboard.upload}
           </p>
         </motion.div>
 
@@ -195,12 +195,12 @@ const EmployeeExpenses = () => {
           transition={{ delay: 0.1 }}
           className="mb-6"
         >
-          <Card className="bg-primary-500/10 border-primary-500/20">
-            <p className="text-white/90 text-sm">
-              User should be able to upload a receipt from his computer or take a photo of the receipt, 
-              using OCR a new expense should get created with total amount and other necessary details.
-            </p>
-          </Card>
+          <Card className="bg-primary/10 border-muted">
+            <p className="text-body text-sm">
+               User should be able to upload a receipt from his computer or take a photo of the receipt, 
+               using OCR a new expense should get created with total amount and other necessary details.
+             </p>
+           </Card>
         </motion.div>
 
         {/* Action Buttons */}
@@ -212,14 +212,14 @@ const EmployeeExpenses = () => {
         >
           <button
             onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl transition-all duration-300 font-medium"
+            className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl transition-all duration-300 font-medium"
           >
             <Upload size={20} weight="bold" />
             <span>Upload</span>
           </button>
           <button
             onClick={() => setShowNewExpenseModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all duration-300 font-medium"
+            className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-muted text-body rounded-xl transition-all duration-300 font-medium"
           >
             <Plus size={20} weight="bold" />
             <span>New</span>
@@ -234,8 +234,8 @@ const EmployeeExpenses = () => {
           className="mb-6 grid grid-cols-3 gap-4"
         >
           <Card className="text-center">
-            <div className="text-sm text-white/60 mb-1">To Submit</div>
-            <div className="text-3xl font-bold text-white">
+            <div className="text-sm text-muted mb-1">To Submit</div>
+            <div className="text-3xl font-bold text-heading">
               {expenses.filter(e => e.status === 'Draft').length}
             </div>
             <div className="text-xs text-white/50 mt-1">
@@ -243,8 +243,8 @@ const EmployeeExpenses = () => {
             </div>
           </Card>
           <Card className="text-center">
-            <div className="text-sm text-white/60 mb-1">Waiting Approval</div>
-            <div className="text-3xl font-bold text-yellow-400">
+            <div className="text-sm text-muted mb-1">Waiting Approval</div>
+            <div className="text-3xl font-bold text-warning">
               {expenses.filter(e => e.status === 'Submitted').length}
             </div>
             <div className="text-xs text-white/50 mt-1">
@@ -252,8 +252,8 @@ const EmployeeExpenses = () => {
             </div>
           </Card>
           <Card className="text-center">
-            <div className="text-sm text-white/60 mb-1">Approved</div>
-            <div className="text-3xl font-bold text-green-400">
+            <div className="text-sm text-muted mb-1">Approved</div>
+            <div className="text-3xl font-bold text-success">
               {expenses.filter(e => e.status === 'Approved').length}
             </div>
             <div className="text-xs text-white/50 mt-1">
@@ -539,7 +539,7 @@ const EmployeeExpenses = () => {
                             <button
                               type="button"
                               onClick={() => handleSubmitExpense('Submitted')}
-                              className="flex-1 px-4 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl transition-all duration-300 font-medium"
+                              className="flex-1 px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-all duration-300 font-medium"
                             >
                               Submit for Approval
                             </button>
@@ -565,7 +565,7 @@ const EmployeeExpenses = () => {
                           <button
                             type="button"
                             onClick={() => handleSubmitExpense('Submitted')}
-                            className="flex-1 px-4 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl transition-all duration-300 font-medium"
+                            className="flex-1 px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-all duration-300 font-medium"
                           >
                             Submit for Approval
                           </button>
@@ -698,7 +698,7 @@ const EmployeeExpenses = () => {
                     <button
                       type="button"
                       onClick={() => handleSubmitExpense('Submitted')}
-                      className="flex-1 px-4 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl transition-all duration-300 font-medium"
+                      className="flex-1 px-4 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-all duration-300 font-medium"
                     >
                       Submit for Approval
                     </button>

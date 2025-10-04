@@ -13,9 +13,9 @@ export const Button = ({
   
   const variants = {
     primary: 'neumorphic-btn glow-on-hover text-white shadow-neumorphic hover:shadow-neumorphic-inset',
-    secondary: 'glass-card text-white border-white/20 hover:border-white/40',
-    ghost: 'text-white/70 hover:text-white hover:bg-white/5',
-    outline: 'border-2 border-primary-400 text-primary-400 hover:bg-primary-400 hover:text-white'
+    secondary: 'glass-card text-body border-muted hover:border-white/40',
+    ghost: 'text-body/70 hover:text-body hover:bg-white/5',
+    outline: 'border-2 border-primary text-primary hover:bg-primary hover:text-white'
   };
   
   const sizes = {
@@ -66,7 +66,7 @@ export const Input = ({
   return (
     <div className="space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-white/90">
+        <label className="block text-sm font-medium text-body">
           {label}
         </label>
       )}
@@ -75,7 +75,7 @@ export const Input = ({
         {...props}
       />
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <p className="text-sm text-danger">{error}</p>
       )}
     </div>
   );
@@ -91,7 +91,7 @@ export const Select = ({
   return (
     <div className="space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-white/90">
+        <label className="block text-sm font-medium text-body">
           {label}
         </label>
       )}
@@ -106,7 +106,7 @@ export const Select = ({
         ))}
       </select>
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <p className="text-sm text-danger">{error}</p>
       )}
     </div>
   );
@@ -121,7 +121,7 @@ export const TextArea = ({
   return (
     <div className="space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-white/90">
+        <label className="block text-sm font-medium text-body">
           {label}
         </label>
       )}
@@ -130,7 +130,7 @@ export const TextArea = ({
         {...props}
       />
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <p className="text-sm text-danger">{error}</p>
       )}
     </div>
   );

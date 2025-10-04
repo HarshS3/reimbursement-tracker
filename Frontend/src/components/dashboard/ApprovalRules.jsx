@@ -200,10 +200,10 @@ const ApprovalRules = () => {
       <Card>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-white mb-2">
+            <h2 className="text-2xl font-semibold text-heading mb-2">
               Approval Rules
             </h2>
-            <p className="body-text">
+            <p className="body-text text-body">
               Configure multi-level approval workflows and conditional rules
             </p>
           </div>
@@ -230,13 +230,13 @@ const ApprovalRules = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-2">{rule.name}</h3>
-                    <p className="text-white/70 text-sm mb-3">{rule.description}</p>
+                    <h3 className="text-lg font-semibold text-heading mb-2">{rule.name}</h3>
+                    <p className="text-muted text-sm mb-3">{rule.description}</p>
                     
                     <div className="flex items-center space-x-4 text-sm">
                       <div className="flex items-center">
-                        <User size={14} className="text-white/40 mr-1" />
-                        <span className="text-white/80">Manager: {rule.manager}</span>
+                        <User size={14} className="text-muted mr-1" />
+                        <span className="text-body">Manager: {rule.manager}</span>
                       </div>
                       
                       <Badge variant="info" className="capitalize">
@@ -268,7 +268,7 @@ const ApprovalRules = () => {
                 <div className="border-t border-white/10 pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h4 className="text-white font-medium mb-3 flex items-center">
+                      <h4 className="text-body font-medium mb-3 flex items-center">
                         <Users size={16} className="mr-2" />
                         Approvers
                       </h4>
@@ -276,10 +276,10 @@ const ApprovalRules = () => {
                         {rule.approvers.map((approver, index) => (
                           <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg p-2">
                             <div className="flex items-center">
-                              <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center mr-2">
+                              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mr-2">
                                 <span className="text-white text-xs">{index + 1}</span>
                               </div>
-                              <span className="text-white">{approver.name}</span>
+                              <span className="text-body">{approver.name}</span>
                             </div>
                             {approver.required ? (
                               <Badge variant="success" className="text-xs">Required</Badge>
@@ -292,43 +292,43 @@ const ApprovalRules = () => {
                     </div>
 
                     <div>
-                      <h4 className="text-white font-medium mb-3 flex items-center">
+                      <h4 className="text-body font-medium mb-3 flex items-center">
                         <Gear size={16} className="mr-2" />
                         Rule Configuration
                       </h4>
                       <div className="space-y-3">
                         {rule.ruleType === 'percentage' && (
                           <div className="bg-white/5 rounded-lg p-3">
-                            <div className="flex items-center text-white/80">
+                            <div className="flex items-center text-body">
                               <Percent size={16} className="mr-2" />
                               <span>Minimum Approval: {rule.minimumApprovalPercentage}%</span>
                             </div>
-                            <p className="text-xs text-white/60 mt-1">
+                            <p className="text-xs text-muted mt-1">
                               Specify the number of percentage approvers required in order to get the request approved.
                             </p>
                           </div>
                         )}
                         
                         <div className="bg-white/5 rounded-lg p-3">
-                          <div className="flex items-center text-white/80">
+                          <div className="flex items-center text-body">
                             <CheckCircle size={16} className="mr-2" />
                             <span>Sequential Approval: {rule.approverSequence ? 'Yes' : 'No'}</span>
                           </div>
                           {rule.approverSequence ? (
-                            <p className="text-xs text-white/60 mt-1">
+                            <p className="text-xs text-muted mt-1">
                               If this field is ticked true then the above mentioned sequence of approvers matters, 
                               that is first the request goes to John, if he approves/rejects then only request goes 
                               to mitchell and so on.
                             </p>
                           ) : (
-                            <p className="text-xs text-white/60 mt-1">
+                            <p className="text-xs text-muted mt-1">
                               If not ticked then send approver request to all approvers at the same time.
                             </p>
                           )}
                         </div>
                         
                         {!rule.approverSequence && (
-                          <p className="text-xs text-white/50">
+                          <p className="text-xs text-muted">
                             If the required approver rejects the request, then expense request is auto-rejected.
                             If not ticked then send approver request to all approvers at the same time.
                           </p>
@@ -355,9 +355,9 @@ const ApprovalRules = () => {
               className="relative glass-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-white">
-                  {editingRule ? 'Edit Approval Rule' : 'Create Approval Rule'}
-                </h3>
+                <h3 className="text-xl font-semibold text-heading">
+                   {editingRule ? 'Edit Approval Rule' : 'Create Approval Rule'}
+                 </h3>
                 <button
                   onClick={handleCloseForm}
                   className="p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -430,7 +430,7 @@ const ApprovalRules = () => {
 
                   {formData.approvers.map((approver, index) => (
                     <div key={index} className="flex items-center space-x-3 p-3 bg-white/5 rounded-lg">
-                      <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
                         <span className="text-primary-400 text-sm">{index + 1}</span>
                       </div>
                       

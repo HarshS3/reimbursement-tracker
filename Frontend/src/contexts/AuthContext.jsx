@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import client from '../api/client'; // new
 
 const AuthContext = createContext();
 
@@ -12,193 +13,88 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loadingAuth, setLoadingAuth] = useState(true);
 
-  // Mock authentication state
+  // Load stored token/profile on init
   useEffect(() => {
-    // Check for stored auth data
-    const storedUser = localStorage.getItem('claimdoo_user');
-    const storedCompany = localStorage.getItem('claimdoo_company');
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    if (storedCompany) {
-      setCompany(JSON.parse(storedCompany));
-    }
-    
-    setLoading(false);
+    const init = async () => {
+      const token = localStorage.getItem('claimdoo_token');
+      if (!token) {
+        setLoadingAuth(false);
+        return;
+      }
+      try {
+        const resp = await client.get('/auth/me');
+        if (resp.data && resp.data.success) {
+          setUser(resp.data.user);
+          setCompany(resp.data.user.company || null);
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem('claimdoo_token');
+        }
+      } catch (err) {
+        localStorage.removeItem('claimdoo_token');
+      } finally {
+        setLoadingAuth(false);
+      }
+    };
+    init();
   }, []);
 
-  const signIn = async (email, password) => {
-    // Mock API call
+  const signIn = async (credentials) => {
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Demo accounts
-      const demoAccounts = {
-        'admin@claimdoo.com': {
-          id: 1,
-          name: 'Admin User',
-          email: 'admin@claimdoo.com',
-          role: 'admin',
-          avatar: null,
-          password: 'admin123'
-        },
-        'manager@claimdoo.com': {
-          id: 2,
-          name: 'Manager User',
-          email: 'manager@claimdoo.com',
-          role: 'manager',
-          avatar: null,
-          password: 'manager123'
-        },
-        'sarah@claimdoo.com': {
-          id: 3,
-          name: 'Sarah Johnson',
-          email: 'sarah@claimdoo.com',
-          role: 'employee',
-          avatar: null,
-          password: 'employee123',
-          department: 'Engineering',
-          manager: 'Manager User'
-        }
-      };
-      
-      // Check if it's a demo account
-      const demoUser = demoAccounts[email];
-      if (demoUser && demoUser.password === password) {
-        const { password: _, ...userWithoutPassword } = demoUser;
-        const mockUser = userWithoutPassword;
-        
-        const mockCompany = {
-          id: 1,
-          name: 'ClaimDoo Demo Company',
-          currency: 'USD',
-          country: 'United States'
-        };
-        
-        setUser(mockUser);
-        setCompany(mockCompany);
-        
-        localStorage.setItem('claimdoo_user', JSON.stringify(mockUser));
-        localStorage.setItem('claimdoo_company', JSON.stringify(mockCompany));
-        
-        return { success: true };
+      const resp = await client.post('/auth/login', credentials);
+      if (resp.data && resp.data.user && resp.data.token) {
+        localStorage.setItem('claimdoo_token', resp.data.token);
+        setUser(resp.data.user);
+        setCompany(resp.data.user.company || null);
+        setIsAuthenticated(true);
+        return { success: true, user: resp.data.user };
       }
-      
-      // Default fallback for other emails
-      const mockUser = {
-        id: Date.now(),
-        name: 'John Doe',
-        email: email,
-        role: 'admin', // admin, manager, employee
-        avatar: null
-      };
-      
-      const mockCompany = {
-        id: 1,
-        name: 'Sample Company',
-        currency: 'USD',
-        country: 'United States'
-      };
-      
-      setUser(mockUser);
-      setCompany(mockCompany);
-      
-      localStorage.setItem('claimdoo_user', JSON.stringify(mockUser));
-      localStorage.setItem('claimdoo_company', JSON.stringify(mockCompany));
-      
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Invalid credentials' };
+      return { success: false, error: 'Invalid response' };
+    } catch (err) {
+      return { success: false, error: err?.response?.data?.message || err.message };
     }
   };
 
-  const signUp = async (userData) => {
-    // Mock API call
+  const signUp = async (payload) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const newUser = {
-        id: Date.now(),
-        name: userData.name,
-        email: userData.email,
-        role: 'admin', // First user becomes admin
-        avatar: null
-      };
-      
-      const newCompany = {
-        id: Date.now(),
-        name: userData.companyName || 'My Company',
-        currency: userData.currency || 'USD',
-        country: userData.country || 'United States'
-      };
-      
-      setUser(newUser);
-      setCompany(newCompany);
-      
-      localStorage.setItem('claimdoo_user', JSON.stringify(newUser));
-      localStorage.setItem('claimdoo_company', JSON.stringify(newCompany));
-      
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: 'Registration failed' };
+      const resp = await client.post('/auth/signup', payload);
+      if (resp.data && resp.data.user && resp.data.token) {
+        localStorage.setItem('claimdoo_token', resp.data.token);
+        setUser(resp.data.user);
+        setCompany(resp.data.company || null);
+        setIsAuthenticated(true);
+        return { success: true, user: resp.data.user };
+      }
+      return { success: false, error: 'Invalid response' };
+    } catch (err) {
+      return { success: false, error: err?.response?.data?.message || err.message };
     }
   };
 
   const signOut = () => {
+    localStorage.removeItem('claimdoo_token');
     setUser(null);
     setCompany(null);
-    localStorage.removeItem('claimdoo_user');
-    localStorage.removeItem('claimdoo_company');
-  };
-
-  // Mock forgot password - simulate sending reset email
-  const forgotPassword = async (email) => {
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      // Always return success for demo
-      return { success: true };
-    } catch (e) {
-      return { success: false, error: 'Unable to send reset email' };
-    }
-  };
-
-  const updateUser = (userData) => {
-    const updatedUser = { ...user, ...userData };
-    setUser(updatedUser);
-    localStorage.setItem('claimdoo_user', JSON.stringify(updatedUser));
-  };
-
-  const updateCompany = (companyData) => {
-    const updatedCompany = { ...company, ...companyData };
-    setCompany(updatedCompany);
-    localStorage.setItem('claimdoo_company', JSON.stringify(updatedCompany));
-  };
-
-  const value = {
-    user,
-    company,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    updateUser,
-    updateCompany,
-    forgotPassword,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
-    isManager: user?.role === 'manager',
-    isEmployee: user?.role === 'employee'
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        user,
+        company,
+        isAuthenticated,
+        loadingAuth,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
 };

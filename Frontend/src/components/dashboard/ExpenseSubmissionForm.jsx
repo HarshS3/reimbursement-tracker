@@ -3,16 +3,10 @@ import { motion } from 'framer-motion';
 import { Card, Button, Input, Select, TextArea, Modal } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useExpenseApi, useCurrencyConversion } from '../../hooks/useApi';
-import { 
-  Camera, 
-  Upload, 
-  X, 
-  Receipt as ReceiptIcon,
-  Calendar,
-  CurrencyDollar,
-  FileText
-} from 'phosphor-react';
+import STRINGS from '../../config/strings';
+import { Camera, Upload, X, Receipt as ReceiptIcon, CurrencyDollar, FileText } from 'phosphor-react';
 import Tesseract from 'tesseract.js';
+import { CATEGORIES } from '../../config/sampleData';
 
 const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
   const { user, company } = useAuth();
@@ -36,15 +30,7 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
   const [minimized, setMinimized] = useState(false);
   const [convertedAmount, setConvertedAmount] = useState(null);
 
-  const categories = [
-    { value: 'food', label: 'Food & Dining' },
-    { value: 'transport', label: 'Transportation' },
-    { value: 'accommodation', label: 'Accommodation' },
-    { value: 'office', label: 'Office Supplies' },
-    { value: 'travel', label: 'Travel' },
-    { value: 'entertainment', label: 'Entertainment' },
-    { value: 'other', label: 'Other' }
-  ];
+  const categories = CATEGORIES;
 
   const currencies = [
     { value: 'USD', label: 'USD - US Dollar' },
@@ -55,7 +41,6 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
     { value: 'JPY', label: 'JPY - Japanese Yen' },
     { value: 'INR', label: 'INR - Indian Rupee' }
   ];
-
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -63,78 +48,45 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
       [name]: value
     }));
 
-    // Convert currency when amount or currency changes
-    if ((name === 'amount' || name === 'currency') && formData.amount && value) {
-      if (name === 'currency' && value !== company?.currency) {
-        try {
-          const result = await convertCurrency(
-            parseFloat(formData.amount),
-            value,
-            company?.currency
-          );
-          setConvertedAmount(result);
-        } catch (error) {
-          console.error('Currency conversion failed:', error);
-        }
-      } else if (name === 'amount' && formData.currency !== company?.currency) {
-        try {
-          const result = await convertCurrency(
-            parseFloat(value),
-            formData.currency,
-            company?.currency
-          );
-          setConvertedAmount(result);
-        } catch (error) {
-          console.error('Currency conversion failed:', error);
-        }
-      }
+    // Clear errors for the field
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
     }
 
-    // Clear errors
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+    // Trigger currency conversion when amount or currency changes
+    if (name === 'amount' || name === 'currency') {
+      const amountToConvert = name === 'amount' ? parseFloat(value || 0) : parseFloat(formData.amount || 0);
+      const fromCurrency = name === 'currency' ? value : formData.currency;
+      if (!isNaN(amountToConvert) && fromCurrency && company?.currency) {
+        try {
+          const result = await convertCurrency(amountToConvert, fromCurrency, company?.currency);
+          setConvertedAmount(result);
+        } catch (err) {
+          console.error('Currency conversion failed:', err);
+        }
+      }
     }
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e?.target?.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrors(prev => ({
-        ...prev,
-        receipt: 'Please upload an image file'
-      }));
-      return;
-    }
-
     setReceipt(file);
-    
+
     // Create preview
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setReceiptPreview(e.target.result);
-    };
+    reader.onload = (ev) => setReceiptPreview(ev.target.result);
     reader.readAsDataURL(file);
 
     // Perform OCR
     setOcrLoading(true);
     try {
       const { data: { text } } = await Tesseract.recognize(file, 'eng');
-      
-      // Extract information from OCR text (basic extraction)
       const extractedData = extractReceiptData(text);
-      
-      // Auto-fill form fields
-      setFormData(prev => ({
-        ...prev,
-        ...extractedData
-      }));
-    } catch (error) {
-      console.error('OCR failed:', error);
+      setFormData(prev => ({ ...prev, ...extractedData }));
+    } catch (err) {
+      console.error('OCR failed:', err);
     } finally {
       setOcrLoading(false);
     }
@@ -243,35 +195,35 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
     <Modal isOpen={true} onClose={onClose} className="max-w-2xl">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-white">Submit New Expense</h2>
+          <h2 className="text-2xl font-semibold text-heading">Submit New Expense</h2>
           <button
             onClick={() => setMinimized(prev => !prev)}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors mr-2"
           >
             {minimized ? (
-              <span className="text-white/70 text-sm">Restore</span>
+              <span className="text-body text-sm">Restore</span>
             ) : (
-              <span className="text-white/70 text-sm">Minimize</span>
+              <span className="text-body text-sm">Minimize</span>
             )}
           </button>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <X size={20} className="text-white/60" />
+            <X size={20} className="text-muted" />
           </button>
         </div>
         {!minimized && (
         <form onSubmit={handleSubmit} className="space-y-6">
           {errors.general && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-              <p className="text-red-400 text-sm">{errors.general}</p>
+              <p className="text-danger text-sm">{errors.general}</p>
             </div>
           )}
 
           {/* Receipt Upload */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-white flex items-center">
+            <h3 className="text-lg font-medium text-heading flex items-center">
               <ReceiptIcon size={20} className="mr-2" />
               Receipt Upload
             </h3>
@@ -298,18 +250,18 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
                     </Button>
                   </div>
                   {ocrLoading && (
-                    <div className="text-primary-400 text-sm">
+                    <div className="text-primary text-sm">
                       Processing receipt with AI OCR...
                     </div>
                   )}
                 </div>
               ) : (
                 <div>
-                  <Upload size={48} className="text-white/40 mx-auto mb-4" />
-                  <p className="text-white/70 mb-2">
+                  <Upload size={48} className="text-muted mx-auto mb-4" />
+                  <p className="text-body mb-2">
                     Upload receipt for automatic data extraction
                   </p>
-                  <p className="text-white/50 text-sm mb-4">
+                  <p className="text-muted text-sm mb-4">
                     AI will auto-fill fields like date, amount, category, and merchant
                   </p>
                   <input
@@ -376,7 +328,7 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
             />
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-white/90">Expense Date</label>
+              <label className="block text-sm font-medium text-body">Expense Date</label>
               <input
                 className={`luxury-input w-full ${errors.date ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' : ''}`}
                 type="date"
@@ -386,7 +338,7 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
                 required
               />
               {errors.date && (
-                <p className="text-sm text-red-400">{errors.date}</p>
+                <p className="text-danger text-sm">{errors.date}</p>
               )}
             </div>
 

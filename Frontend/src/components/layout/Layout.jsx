@@ -55,35 +55,35 @@ const Navigation = () => {
               alt="ClaimDoo Logo" 
               className="w-8 h-8 rounded-lg object-cover"
             />
-            <span className="text-xl font-semibold text-white">ClaimDoo</span>
+            <span className="text-xl font-semibold text-heading">ClaimDoo</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
+                {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
                 className={`text-sm font-medium transition-colors duration-200 ${
                   location.pathname === item.href
-                    ? 'text-primary-400'
-                    : 'text-white/70 hover:text-white'
+                    ? 'text-primary'
+                    : 'text-body hover:text-heading'
                 }`}
               >
                 {item.name}
               </Link>
             ))}
             
-            {isAuthenticated ? (
+                {isAuthenticated ? (
               <div className="flex items-center space-x-4">
                 <Link
                   to="/dashboard"
-                  className="text-sm font-medium text-white/70 hover:text-white transition-colors duration-200"
+                      className="text-sm font-medium text-body hover:text-heading transition-colors duration-200"
                 >
                   Dashboard
                 </Link>
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
                       {user?.name?.charAt(0) || 'U'}
                     </span>
@@ -96,11 +96,11 @@ const Navigation = () => {
                   </button>
                 </div>
               </div>
-            ) : (
+                ) : (
               <div className="flex items-center space-x-4">
                 <Link
                   to="/signin"
-                  className="text-sm font-medium text-white/70 hover:text-white transition-colors duration-200"
+                      className="text-sm font-medium text-body hover:text-heading transition-colors duration-200"
                 >
                   Sign In
                 </Link>

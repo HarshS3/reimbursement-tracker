@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, Button, Input, Select, Modal, Badge } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
+import STRINGS from '../../config/strings';
 import { useUserApi } from '../../hooks/useApi';
 import { 
   Plus, 
@@ -215,9 +216,9 @@ const UserManagement = () => {
       <Card>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-white mb-2">User Management</h2>
-            <p className="body-text">
-              Manage employees, managers, and their roles
+            <h2 className="text-2xl font-semibold text-heading mb-2">{STRINGS.userManagement.title}</h2>
+            <p className="body-text text-body">
+              {STRINGS.userManagement.description}
             </p>
           </div>
           <Button onClick={() => handleOpenModal()}>
@@ -228,27 +229,27 @@ const UserManagement = () => {
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-400"></div>
-            <span className="ml-3 text-white/70">Loading users...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{borderColor: 'var(--primary-light)'}}></div>
+            <span className="ml-3 text-body">Loading users...</span>
           </div>
         ) : (
           <div className="space-y-4">
             {/* Header Row */}
-            <div className="grid grid-cols-5 gap-4 p-4 text-sm font-medium text-white/60 border-b border-white/10">
-              <div>User</div>
-              <div>Role</div>
-              <div>Manager</div>
-              <div>Email</div>
-              <div>Actions</div>
-            </div>
+            <div className="grid grid-cols-5 gap-4 p-4 text-sm font-medium text-muted border-b border-muted">
+               <div>User</div>
+               <div>Role</div>
+               <div>Manager</div>
+               <div>Email</div>
+               <div>Actions</div>
+             </div>
 
             {/* User Rows */}
             {users.length === 0 ? (
               <div className="text-center py-12">
-                <User size={48} className="text-white/30 mx-auto mb-4" />
-                <p className="text-white/60 text-lg">No users found</p>
-                <p className="text-white/40 text-sm">
-                  {users.length === 0 ? 'Can create a new user on the fly, if no user found with that name.' : ''}
+                <User size={48} className="text-muted mx-auto mb-4" />
+                <p className="text-muted text-lg">{STRINGS.userManagement.noUsers}</p>
+                <p className="text-muted text-sm">
+                  {users.length === 0 ? STRINGS.userManagement.noUsersHelp : ''}
                 </p>
               </div>
             ) : (
@@ -260,14 +261,14 @@ const UserManagement = () => {
                   className="grid grid-cols-5 gap-4 p-4 glass-card rounded-xl hover:bg-white/5 transition-colors"
                 >
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center mr-3">
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center mr-3">
                       <span className="text-white font-medium">
                         {user.name?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <div>
-                      <div className="text-white font-medium">{user.name}</div>
-                      <div className="text-xs text-white/60">
+                      <div className="text-heading font-medium">{user.name}</div>
+                      <div className="text-xs text-muted">
                         {user.id === currentUser?.id && '(You)'}
                       </div>
                     </div>
@@ -280,14 +281,14 @@ const UserManagement = () => {
                   </div>
 
                   <div className="flex items-center">
-                    <span className="text-white/80">
+                    <span className="text-body">
                       {user.manager || '-'}
                     </span>
                   </div>
 
                   <div className="flex items-center">
-                    <Envelope size={14} className="text-white/40 mr-2" />
-                    <span className="text-white/80 text-sm">{user.email}</span>
+                    <Envelope size={14} className="text-muted mr-2" />
+                    <span className="text-body text-sm">{user.email}</span>
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -302,7 +303,7 @@ const UserManagement = () => {
                     <Button
                       size="sm"
                       onClick={() => handleSendPassword(user)}
-                      className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30"
+                      className="bg-primary text-white"
                     >
                       Send Password
                     </Button>

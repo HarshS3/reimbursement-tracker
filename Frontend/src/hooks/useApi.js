@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import client from '../api/client'; // new import
 
 // Hook for fetching countries and currencies
 export const useCountries = () => {
@@ -115,28 +116,25 @@ export const useExpenseApi = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Mock API call - replace with actual backend endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newExpense = {
-        id: Date.now(),
-        ...expenseData,
-        status: 'pending',
-        submittedAt: new Date().toISOString(),
-        approvalHistory: []
-      };
-      
-      // Store in localStorage for demo
-      const existingExpenses = JSON.parse(localStorage.getItem('claimdoo_expenses') || '[]');
-      existingExpenses.push(newExpense);
-      localStorage.setItem('claimdoo_expenses', JSON.stringify(existingExpenses));
-      
-      return { success: true, expense: newExpense };
+      const resp = await client.post('/expenses', expenseData);
+      return resp.data || { success: true, expense: resp.data.expense };
     } catch (err) {
-      console.error('Failed to submit expense:', err);
-      setError('Failed to submit expense. Please try again.');
-      return { success: false, error: err.message };
+      setError(err?.response?.data?.message || err.message);
+      return { success: false, error: err?.response?.data?.message || err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateExpense = async (id, updateData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const resp = await client.patch(`/expenses/${id}`, updateData);
+      return resp.data;
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message);
+      return { success: false, error: err?.response?.data?.message || err.message };
     } finally {
       setLoading(false);
     }
@@ -146,73 +144,23 @@ export const useExpenseApi = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const expenses = JSON.parse(localStorage.getItem('claimdoo_expenses') || '[]');
-      
-      // Apply filters if provided
-      let filteredExpenses = expenses;
-      if (filters.status) {
-        filteredExpenses = expenses.filter(exp => exp.status === filters.status);
-      }
-      if (filters.userId) {
-        filteredExpenses = filteredExpenses.filter(exp => exp.userId === filters.userId);
-      }
-      
-      return { success: true, expenses: filteredExpenses };
+      const resp = await client.get('/expenses', { params: filters });
+      return resp.data || { success: true, expenses: [] };
     } catch (err) {
-      console.error('Failed to fetch expenses:', err);
-      setError('Failed to load expenses. Please try again.');
-      return { success: false, error: err.message };
+      setError(err?.response?.data?.message || err.message);
+      // Fallback to localStorage for dev if backend unreachable
+      try {
+        const expenses = JSON.parse(localStorage.getItem('claimdoo_expenses') || '[]');
+        return { success: true, expenses };
+      } catch {
+        return { success: false, error: err?.message };
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const approveExpense = async (expenseId, decision, comments = '') => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const expenses = JSON.parse(localStorage.getItem('claimdoo_expenses') || '[]');
-      const expenseIndex = expenses.findIndex(exp => exp.id === expenseId);
-      
-      if (expenseIndex === -1) {
-        throw new Error('Expense not found');
-      }
-      
-      expenses[expenseIndex].status = decision; // 'approved' or 'rejected'
-      expenses[expenseIndex].approvalHistory.push({
-        decision,
-        comments,
-        approvedBy: 'Current User', // Replace with actual user
-        approvedAt: new Date().toISOString()
-      });
-      
-      localStorage.setItem('claimdoo_expenses', JSON.stringify(expenses));
-      
-      return { success: true, expense: expenses[expenseIndex] };
-    } catch (err) {
-      console.error('Failed to process approval:', err);
-      setError('Failed to process approval. Please try again.');
-      return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return {
-    submitExpense,
-    getExpenses,
-    approveExpense,
-    loading,
-    error
-  };
+  return { submitExpense, updateExpense, getExpenses, loading, error };
 };
 
 // Hook for user management API calls

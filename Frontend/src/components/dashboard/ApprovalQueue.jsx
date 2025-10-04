@@ -122,16 +122,16 @@ const ApprovalQueue = ({ onRefresh }) => {
       <Card>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-semibold text-white mb-2">
+            <h2 className="text-2xl font-semibold text-heading mb-2">
               Approvals to Review
             </h2>
-            <p className="body-text">
+            <p className="body-text text-body">
               Review and approve expense claims from your team
             </p>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-semibold text-white">{pendingExpenses.length}</div>
-            <div className="text-sm text-white/60">Pending</div>
+            <div className="text-2xl font-semibold text-heading">{pendingExpenses.length}</div>
+            <div className="text-sm text-muted">Pending</div>
           </div>
         </div>
 
@@ -149,7 +149,7 @@ const ApprovalQueue = ({ onRefresh }) => {
         ) : (
           <div className="space-y-4">
             {/* Header Row */}
-            <div className="grid grid-cols-6 gap-4 p-4 text-sm font-medium text-white/60 border-b border-white/10">
+            <div className="grid grid-cols-6 gap-4 p-4 text-sm font-medium text-muted border-b border-muted">
               <div>Approval Subject</div>
               <div>Request Owner</div>
               <div>Category</div>
@@ -167,10 +167,10 @@ const ApprovalQueue = ({ onRefresh }) => {
                 className="grid grid-cols-6 gap-4 p-4 glass-card rounded-xl hover:bg-white/5 transition-colors"
               >
                 <div className="flex items-center">
-                  <Receipt size={16} className="text-primary-400 mr-2" />
+                  <Receipt size={16} className="text-primary mr-2" />
                   <div>
-                    <div className="text-white font-medium truncate">{expense.description}</div>
-                    <div className="text-xs text-white/60 flex items-center mt-1">
+                    <div className="text-heading font-medium truncate">{expense.description}</div>
+                    <div className="text-xs text-muted flex items-center mt-1">
                       <Calendar size={12} className="mr-1" />
                       {formatDate(expense.date)}
                     </div>
@@ -178,14 +178,14 @@ const ApprovalQueue = ({ onRefresh }) => {
                 </div>
 
                 <div className="flex items-center">
-                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center mr-2">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2">
                     <span className="text-white text-xs font-medium">
                       {expense.paidBy?.charAt(0) || 'U'}
                     </span>
                   </div>
                   <div>
-                    <div className="text-white font-medium">{expense.paidBy || 'Unknown'}</div>
-                    <div className="text-xs text-white/60">Employee</div>
+                    <div className="text-heading font-medium">{expense.paidBy || 'Unknown'}</div>
+                    <div className="text-xs text-muted">Employee</div>
                   </div>
                 </div>
 
@@ -202,7 +202,7 @@ const ApprovalQueue = ({ onRefresh }) => {
                 </div>
 
                 <div className="flex items-center">
-                  <CurrencyDollar size={16} className="text-primary-400 mr-1" />
+                  <CurrencyDollar size={16} className="text-primary mr-1" />
                   <div className="text-sm">
                     {getConvertedAmount(expense)}
                   </div>
@@ -220,14 +220,14 @@ const ApprovalQueue = ({ onRefresh }) => {
                   <Button
                     size="sm"
                     onClick={() => handleApprovalAction(expense, 'approve')}
-                    className="bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                    className="bg-green-500/20 text-success hover:bg-green-500/30"
                   >
                     Approve
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => handleApprovalAction(expense, 'reject')}
-                    className="bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    className="bg-red-500/20 text-danger hover:bg-red-500/30"
                   >
                     Reject
                   </Button>
