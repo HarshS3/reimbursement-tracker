@@ -33,6 +33,7 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [minimized, setMinimized] = useState(false);
   const [convertedAmount, setConvertedAmount] = useState(null);
 
   const categories = [
@@ -244,13 +245,23 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-white">Submit New Expense</h2>
           <button
+            onClick={() => setMinimized(prev => !prev)}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors mr-2"
+          >
+            {minimized ? (
+              <span className="text-white/70 text-sm">Restore</span>
+            ) : (
+              <span className="text-white/70 text-sm">Minimize</span>
+            )}
+          </button>
+          <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >
             <X size={20} className="text-white/60" />
           </button>
         </div>
-
+        {!minimized && (
         <form onSubmit={handleSubmit} className="space-y-6">
           {errors.general && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
@@ -364,15 +375,20 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
               required
             />
 
-            <Input
-              label="Expense Date"
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleInputChange}
-              error={errors.date}
-              required
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-white/90">Expense Date</label>
+              <input
+                className={`luxury-input w-full ${errors.date ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' : ''}`}
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleInputChange}
+                required
+              />
+              {errors.date && (
+                <p className="text-sm text-red-400">{errors.date}</p>
+              )}
+            </div>
 
             <Input
               label="Paid By"
@@ -426,6 +442,7 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
             </Button>
           </div>
         </form>
+        )}
       </div>
     </Modal>
   );

@@ -90,10 +90,8 @@ const ApprovalRules = () => {
     e.preventDefault();
     
     const newErrors = {};
-    if (!newRule.category) newErrors.category = 'Category is required';
     if (!newRule.name.trim()) newErrors.name = 'Rule name is required';
     if (!newRule.description.trim()) newErrors.description = 'Description is required';
-    if (!newRule.manager) newErrors.manager = 'Manager selection is required';
     if (newRule.approvers.length === 0) {
       newErrors.approvers = 'At least one approver is required';
     }
@@ -174,16 +172,9 @@ const ApprovalRules = () => {
                 <Info size={32} className="text-white/40" />
               </div>
               <h3 className="text-xl font-light text-white mb-2">No Rules Created</h3>
-              <p className="text-white/60 mb-6">
-                Create your first approval rule to start managing expense approvals
+              <p className="text-white/60">
+                Use the "New Rule" button above to create your first approval rule
               </p>
-              <button
-                onClick={handleAddRule}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl transition-all duration-300 font-medium"
-              >
-                <Plus size={20} weight="bold" />
-                <span>Create First Rule</span>
-              </button>
             </Card>
           ) : (
             rules.map((rule, index) => (
@@ -212,7 +203,7 @@ const ApprovalRules = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-white/10">
                   <div>
                     <p className="text-white/50 text-xs mb-1">Manager</p>
-                    <p className="text-white font-medium">{rule.manager}</p>
+                    <p className="text-white font-medium">{rule.manager || '—'}</p>
                   </div>
                   <div>
                     <p className="text-white/50 text-xs mb-1">Approvers</p>
@@ -230,11 +221,11 @@ const ApprovalRules = () => {
 
         {/* Rule Modal */}
         {showRuleModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm overflow-y-auto py-8">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full max-w-3xl my-8"
+              className="w-full max-w-3xl max-h-[90vh] overflow-y-auto my-8"
             >
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -245,6 +236,7 @@ const ApprovalRules = () => {
                     onClick={() => {
                       setShowRuleModal(false);
                       setNewRule({
+                        category: '',
                         name: '',
                         description: '',
                         manager: '',
@@ -262,31 +254,6 @@ const ApprovalRules = () => {
                 </div>
 
                 <form onSubmit={handleSaveRule} className="space-y-6">
-                  {/* Category Selection */}
-                  <div>
-                    <label className="block text-white/90 text-sm font-medium mb-2">
-                      Expense Category
-                    </label>
-                    <select
-                      value={newRule.category}
-                      onChange={(e) => setNewRule({ ...newRule, category: e.target.value })}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all appearance-none cursor-pointer"
-                      required
-                    >
-                      <option value="" className="bg-[#1e293b] text-white/70">
-                        Select category
-                      </option>
-                      {categories.map(category => (
-                        <option key={category} value={category} className="bg-[#1e293b]">
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.category && (
-                      <p className="text-sm text-red-400 mt-1">{errors.category}</p>
-                    )}
-                  </div>
-
                   {/* Rule Name */}
                   <div>
                     <label className="block text-white/90 text-sm font-medium mb-2">
@@ -323,33 +290,7 @@ const ApprovalRules = () => {
                     )}
                   </div>
 
-                  {/* Manager Selection */}
-                  <div>
-                    <label className="block text-white/90 text-sm font-medium mb-2">
-                      Manager
-                    </label>
-                    <select
-                      value={newRule.manager}
-                      onChange={(e) => setNewRule({ ...newRule, manager: e.target.value })}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all appearance-none cursor-pointer"
-                      required
-                    >
-                      <option value="" className="bg-[#1e293b] text-white/70">
-                        Select manager
-                      </option>
-                      {allUsers.filter(u => u.role === 'Manager').map(manager => (
-                        <option key={manager.id} value={manager.name} className="bg-[#1e293b]">
-                          {manager.name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.manager && (
-                      <p className="text-sm text-red-400 mt-1">{errors.manager}</p>
-                    )}
-                    <p className="text-xs text-white/50 mt-2">
-                      Initially the manager set on user record should be set, admin can change manager for approval if required.
-                    </p>
-                  </div>
+                  {/* Manager Selection removed as requested */}
 
                   {/* Is Manager an Approver */}
                   <div>
@@ -501,6 +442,7 @@ const ApprovalRules = () => {
                       onClick={() => {
                         setShowRuleModal(false);
                         setNewRule({
+                          category: '',
                           name: '',
                           description: '',
                           manager: '',

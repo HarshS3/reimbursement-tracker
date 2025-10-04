@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AuthProvider } from './contexts/AuthContext';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Layout Components
 import Layout from './components/layout/Layout';
@@ -16,7 +17,6 @@ import Settings from './pages/Settings';
 import UsersManagement from './pages/admin/UsersManagement';
 import ApprovalRules from './pages/admin/ApprovalRules';
 import EmployeeExpenses from './pages/employee/EmployeeExpenses';
-import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Page Transition Component
 const PageTransition = ({ children }) => (
@@ -60,6 +60,11 @@ function App() {
                   <SignUp />
                 </PageTransition>
               } />
+              <Route path="/forgot-password" element={
+                <PageTransition>
+                  <ForgotPassword />
+                </PageTransition>
+              } />
               <Route path="/dashboard" element={
                 <PageTransition>
                   <Dashboard />
@@ -83,11 +88,6 @@ function App() {
               <Route path="/settings" element={
                 <PageTransition>
                   <Settings />
-                </PageTransition>
-              } />
-              <Route path="/forgot-password" element={
-                <PageTransition>
-                  <ForgotPassword />
                 </PageTransition>
               } />
             </Routes>

@@ -1,53 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
+import { motion } from 'framer-motion';
+import Spline from '@splinetool/react-spline';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ForgotPassword = () => {
+  const { forgotPassword } = useAuth();
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert('Reset link has been sent to your email');
-    // In a real application, you would handle the API call to send a reset link here.
-    setEmail('');
+    setError('');
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setError('Please enter a valid email');
+      return;
+    }
+    setLoading(true);
+    const res = await forgotPassword(email);
+    setLoading(false);
+    if (res.success) {
+      setSuccess(true);
+    } else {
+      setError(res.error || 'Failed to send reset email');
+    }
   };
 
   return (
-    <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 p-10 bg-gray-800 bg-opacity-50 rounded-xl shadow-lg backdrop-blur-md">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-            Forgot Your Password?
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-300">
-            Enter your email address and we'll send you a link to reset your password.
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email-address" className="sr-only">Email address</label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-12 overflow-hidden">
+      {/* Lighter Spline Background */}
+      <div className="absolute inset-0 z-0">
+        <Suspense fallback={
+          <div className="w-full h-full bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]" />
+        }>
+          <div className="w-full h-full opacity-20">
+            <Spline scene="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode" />
           </div>
+        </Suspense>
+      </div>
 
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Send Reset Link
-            </button>
-          </div>
-        </form>
+      {/* Content */}
+      <div className="relative z-10 max-w-md w-full">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8"
+        >
+          <h2 className="text-4xl font-light text-white mb-2">
+            Forgot Password
+          </h2>
+          <p className="text-white/70">Enter your email and we'll send you a reset link.</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="glass-card p-8 rounded-3xl"
+        >
+          {success ? (
+            <div>
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-6">
+                <p className="text-green-400 text-sm">
+                  If an account with that email exists, a password reset link has been sent.
+                </p>
+              </div>
+              <div className="text-center">
+                <Link to="/signin" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                  Back to Sign In
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+              <div>
+                <label className="block text-white/90 text-sm font-medium mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white font-medium rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Sending...' : 'Send Reset Link'}
+              </button>
+              <div className="text-center">
+                <Link to="/signin" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                  Back to Sign In
+                </Link>
+              </div>
+            </form>
+          )}
+        </motion.div>
       </div>
     </div>
   );
