@@ -1,4 +1,6 @@
 const authService = require('../services/authService');
+const { getUserProfileById } = require('../services/userService');
+const AppError = require('../utils/errors');
 const { signToken } = require('../utils/jwt');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -77,8 +79,31 @@ const forgotPassword = asyncHandler(async (req, res) => {
   });
 });
 
+const me = asyncHandler(async (req, res) => {
+  const user = await getUserProfileById(req.user.id);
+  if (!user) {
+    throw AppError.notFound('User not found');
+  }
+
+  const shapedUser = shapeUser(user);
+
+  res.json({
+    success: true,
+    user: {
+      ...shapedUser,
+      company: {
+        id: user.company_id,
+        name: user.company_name,
+        baseCurrency: user.base_currency,
+        country: user.country,
+      },
+    },
+  });
+});
+
 module.exports = {
   signup,
   login,
   forgotPassword,
+  me,
 };

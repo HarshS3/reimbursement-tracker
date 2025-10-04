@@ -9,6 +9,18 @@ async function getUserById(id) {
   return res.rows[0] || null;
 }
 
+async function getUserProfileById(id) {
+  const res = await db.query(
+    `SELECT u.id, u.company_id, u.name, u.email, u.role, u.manager_id, u.created_at,
+            c.name AS company_name, c.base_currency, c.country
+     FROM users u
+     JOIN companies c ON c.id = u.company_id
+     WHERE u.id = $1`,
+    [id]
+  );
+  return res.rows[0] || null;
+}
+
 async function listUsers(companyId) {
   const res = await db.query(`SELECT ${PUBLIC_FIELDS} FROM users WHERE company_id = $1 ORDER BY created_at ASC`, [companyId]);
   return res.rows;
@@ -106,6 +118,7 @@ async function getTeamMemberIds(managerId) {
 
 module.exports = {
   getUserById,
+  getUserProfileById,
   listUsers,
   createUser,
   updateUser,

@@ -7,15 +7,17 @@ const {
 } = require('./ruleService');
 const { getUserById, getTeamMemberIds } = require('./userService');
 
-const EXPENSE_FIELDS = `
+const EXPENSE_SELECT_FIELDS = `
   e.id, e.employee_id, e.rule_id, e.description, e.category,
   e.expense_date, e.paid_by, e.remarks, e.amount, e.currency,
   e.status, e.created_at
 `;
 
+const EXPENSE_RETURN_FIELDS = 'id, employee_id, rule_id, description, category, expense_date, paid_by, remarks, amount, currency, status, created_at';
+
 async function fetchExpenseById(expenseId) {
   const res = await db.query(
-    `SELECT ${EXPENSE_FIELDS}, u.company_id
+  `SELECT ${EXPENSE_SELECT_FIELDS}, u.company_id
      FROM expenses e
      JOIN users u ON u.id = e.employee_id
      WHERE e.id = $1`,
@@ -156,7 +158,7 @@ async function createExpense(employee, payload) {
          employee_id, rule_id, description, category, expense_date,
          paid_by, remarks, amount, currency, status
        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-       RETURNING ${EXPENSE_FIELDS}`,
+       RETURNING ${EXPENSE_RETURN_FIELDS}`,
       [
         employee.id,
         ruleId || null,
@@ -268,7 +270,7 @@ async function updateExpense(employee, expenseId, updates) {
     if (fields.length > 0) {
       values.push(expenseId);
       const updateRes = await client.query(
-        `UPDATE expenses SET ${fields.join(', ')} WHERE id = $${fields.length + 1} RETURNING ${EXPENSE_FIELDS}`,
+        `UPDATE expenses SET ${fields.join(', ')} WHERE id = $${fields.length + 1} RETURNING ${EXPENSE_RETURN_FIELDS}`,
         values
       );
       Object.assign(expense, updateRes.rows[0]);
@@ -308,7 +310,7 @@ async function updateExpense(employee, expenseId, updates) {
 }
 
 async function listExpenses(user) {
-  let query = `SELECT ${EXPENSE_FIELDS}, c.base_currency,
+  let query = `SELECT ${EXPENSE_SELECT_FIELDS}, c.base_currency,
       u.name AS employee_name, u.email AS employee_email
     FROM expenses e
     JOIN users u ON u.id = e.employee_id
@@ -351,7 +353,7 @@ async function listExpenses(user) {
 
 async function getExpenseWithApprovals(expenseId) {
   const expenseRes = await db.query(
-    `SELECT ${EXPENSE_FIELDS}, u.company_id, u.name AS employee_name, u.email AS employee_email,
+    `SELECT ${EXPENSE_SELECT_FIELDS}, u.company_id, u.name AS employee_name, u.email AS employee_email,
             c.base_currency
      FROM expenses e
      JOIN users u ON u.id = e.employee_id
