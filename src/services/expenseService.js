@@ -6,21 +6,28 @@ const {
   getRuleApprovers,
 } = require('./ruleService');
 const { getUserById, getTeamMemberIds } = require('./userService');
+const { convertAmount } = require('./exchangeRateService');
 
 const EXPENSE_SELECT_FIELDS = `
   e.id, e.employee_id, e.rule_id, e.description, e.category,
   e.expense_date, e.paid_by, e.remarks, e.amount, e.currency,
+  e.original_amount, e.original_currency,
   e.status, e.created_at
 `;
 
-const EXPENSE_RETURN_FIELDS = 'id, employee_id, rule_id, description, category, expense_date, paid_by, remarks, amount, currency, status, created_at';
+const EXPENSE_RETURN_FIELDS = 'id, employee_id, rule_id, description, category, expense_date, paid_by, remarks, amount, currency, original_amount, original_currency, status, created_at';
+
+function roundToTwo(value) {
+  return Math.round(Number(value) * 100) / 100;
+}
 
 async function fetchExpenseById(expenseId) {
   const res = await db.query(
-  `SELECT ${EXPENSE_SELECT_FIELDS}, u.company_id
-     FROM expenses e
-     JOIN users u ON u.id = e.employee_id
-     WHERE e.id = $1`,
+  `SELECT ${EXPENSE_SELECT_FIELDS}, u.company_id, c.base_currency
+    FROM expenses e
+    JOIN users u ON u.id = e.employee_id
+    JOIN companies c ON c.id = u.company_id
+    WHERE e.id = $1`,
     [expenseId]
   );
   return res.rows[0] || null;
@@ -144,6 +151,17 @@ async function createExpense(employee, payload) {
     throw AppError.badRequest('Amount must be a positive number');
   }
 
+  const baseCurrency = (employee.base_currency || '').toUpperCase();
+  if (!baseCurrency) {
+    throw AppError.internal('Company base currency not configured');
+  }
+
+  const originalCurrency = currency.toUpperCase();
+  const originalAmount = roundToTwo(numericAmount);
+
+  const { convertedAmount } = await convertAmount(originalAmount, originalCurrency, baseCurrency);
+  const finalAmount = roundToTwo(convertedAmount);
+
   const result = await withTransaction(async (client) => {
     let rule = null;
     let ruleApprovers = [];
@@ -156,8 +174,8 @@ async function createExpense(employee, payload) {
     const insertRes = await client.query(
       `INSERT INTO expenses (
          employee_id, rule_id, description, category, expense_date,
-         paid_by, remarks, amount, currency, status
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         paid_by, remarks, amount, currency, original_amount, original_currency, status
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING ${EXPENSE_RETURN_FIELDS}`,
       [
         employee.id,
@@ -167,8 +185,10 @@ async function createExpense(employee, payload) {
         expenseDate,
         paidBy || null,
         remarks || null,
-        numericAmount,
-        currency,
+        finalAmount,
+        baseCurrency,
+        originalAmount,
+        originalCurrency,
         statusNormalized === 'Draft' ? 'Draft' : 'Waiting Approval',
       ]
     );
@@ -224,14 +244,17 @@ async function updateExpense(employee, expenseId, updates) {
   const fields = [];
   const values = [];
 
+  const baseCurrency = (expense.base_currency || '').toUpperCase();
+  if (!baseCurrency) {
+    throw AppError.internal('Company base currency not configured');
+  }
+
   const allowedFields = {
     description: 'description',
     category: 'category',
     expenseDate: 'expense_date',
     paidBy: 'paid_by',
     remarks: 'remarks',
-    amount: 'amount',
-    currency: 'currency',
     ruleId: 'rule_id',
   };
 
@@ -240,18 +263,49 @@ async function updateExpense(employee, expenseId, updates) {
       if (key === 'ruleId' && updates[key] !== null) {
         await ensureRuleBelongsToCompany(updates[key], employee.company_id);
       }
-      if (key === 'amount') {
-        const numericAmount = Number(updates[key]);
-        if (Number.isNaN(numericAmount) || numericAmount <= 0) {
-          throw AppError.badRequest('Amount must be a positive number');
-        }
-        fields.push(`${column} = $${fields.length + 1}`);
-        values.push(numericAmount);
-      } else {
-        fields.push(`${column} = $${fields.length + 1}`);
-        values.push(updates[key]);
-      }
+      fields.push(`${column} = $${fields.length + 1}`);
+      values.push(updates[key]);
     }
+  }
+
+  let amountCurrencyUpdated = false;
+  let newOriginalAmount = expense.original_amount ? Number(expense.original_amount) : Number(expense.amount);
+  let newOriginalCurrency = (expense.original_currency || expense.currency || baseCurrency || '').toUpperCase();
+
+  if (Object.prototype.hasOwnProperty.call(updates, 'amount')) {
+    const numericAmount = Number(updates.amount);
+    if (Number.isNaN(numericAmount) || numericAmount <= 0) {
+      throw AppError.badRequest('Amount must be a positive number');
+    }
+    newOriginalAmount = roundToTwo(numericAmount);
+    amountCurrencyUpdated = true;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, 'currency')) {
+    if (!updates.currency) {
+      throw AppError.badRequest('Currency is required when updating expense currency');
+    }
+    newOriginalCurrency = String(updates.currency).toUpperCase();
+    amountCurrencyUpdated = true;
+  }
+
+  let convertedAmount = expense.amount ? Number(expense.amount) : newOriginalAmount;
+
+  if (amountCurrencyUpdated) {
+    const conversion = await convertAmount(newOriginalAmount, newOriginalCurrency, baseCurrency);
+    convertedAmount = roundToTwo(conversion.convertedAmount);
+
+    fields.push(`amount = $${fields.length + 1}`);
+    values.push(convertedAmount);
+
+    fields.push(`currency = $${fields.length + 1}`);
+    values.push(baseCurrency);
+
+    fields.push(`original_amount = $${fields.length + 1}`);
+    values.push(newOriginalAmount);
+
+    fields.push(`original_currency = $${fields.length + 1}`);
+    values.push(newOriginalCurrency);
   }
 
   let submit = false;
@@ -274,6 +328,7 @@ async function updateExpense(employee, expenseId, updates) {
         values
       );
       Object.assign(expense, updateRes.rows[0]);
+      expense.base_currency = baseCurrency;
     }
 
     if (submit) {

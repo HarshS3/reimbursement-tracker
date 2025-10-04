@@ -25,6 +25,14 @@ class AppError extends Error {
     return new AppError(409, message);
   }
 
+  static badGateway(message = 'Bad Gateway') {
+    return new AppError(502, message);
+  }
+
+  static serviceUnavailable(message = 'Service Unavailable') {
+    return new AppError(503, message);
+  }
+
   static internal(message = 'Internal Server Error', details) {
     return new AppError(500, message, details);
   }

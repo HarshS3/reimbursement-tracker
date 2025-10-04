@@ -1,10 +1,10 @@
 const expenseService = require('../services/expenseService');
-const userService = require('../services/userService');
+const { getUserProfileById } = require('../services/userService');
 const asyncHandler = require('../utils/asyncHandler');
 const AppError = require('../utils/errors');
 
 const ensureEmployeeContext = async (user) => {
-  const employee = await userService.getUserById(user.id);
+  const employee = await getUserProfileById(user.id);
   if (!employee || employee.company_id !== user.companyId) {
     throw AppError.unauthorized('Unable to resolve user context');
   }
@@ -41,13 +41,20 @@ const serializeExpense = (expense) => ({
   paidBy: expense.paid_by,
   remarks: expense.remarks,
   amount: Number(expense.amount),
-  currency: expense.currency,
+  amountInCompanyCurrency: Number(expense.amount),
+  originalAmount: expense.original_amount !== undefined ? Number(expense.original_amount) : Number(expense.amount),
+  originalCurrency: (expense.original_currency || expense.currency || '').toUpperCase(),
+  conversionRate:
+    expense.original_amount && Number(expense.original_amount) !== 0
+      ? Number((Number(expense.amount) / Number(expense.original_amount)).toFixed(6))
+      : 1,
+  currency: (expense.currency || '').toUpperCase(),
   status: expense.status,
   createdAt: expense.created_at,
   receipts: (expense.receipts || []).map(serializeReceipt),
   employeeName: expense.employee_name,
   employeeEmail: expense.employee_email,
-  baseCurrency: expense.base_currency,
+  baseCurrency: (expense.base_currency || expense.currency || '').toUpperCase(),
   approvals: expense.approvals ? expense.approvals.map(serializeApproval) : undefined,
 });
 

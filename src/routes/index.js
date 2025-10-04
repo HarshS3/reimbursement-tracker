@@ -4,6 +4,7 @@ const userRoutes = require('./userRoutes');
 const ruleRoutes = require('./ruleRoutes');
 const expenseRoutes = require('./expenseRoutes');
 const approvalRoutes = require('./approvalRoutes');
+const referenceRoutes = require('./referenceRoutes');
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use('/users', userRoutes);
 router.use('/rules', ruleRoutes);
 router.use('/expenses', expenseRoutes);
 router.use('/approvals', approvalRoutes);
+router.use('/reference', referenceRoutes);
 
 module.exports = router;
