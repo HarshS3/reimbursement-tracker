@@ -26,6 +26,7 @@ const ApprovalRules = () => {
   ]);
 
   const [newRule, setNewRule] = useState({
+    category: '',
     name: '',
     description: '',
     manager: '',
@@ -36,9 +37,12 @@ const ApprovalRules = () => {
   });
   const [errors, setErrors] = useState({});
 
+  const categories = ['Food', 'Travel', 'Accommodation', 'Office Supplies', 'Entertainment', 'Other'];
+
   const handleAddRule = () => {
     setEditingRule(null);
     setNewRule({
+      category: '',
       name: '',
       description: '',
       manager: '',
@@ -86,6 +90,7 @@ const ApprovalRules = () => {
     e.preventDefault();
     
     const newErrors = {};
+    if (!newRule.category) newErrors.category = 'Category is required';
     if (!newRule.name.trim()) newErrors.name = 'Rule name is required';
     if (!newRule.description.trim()) newErrors.description = 'Description is required';
     if (!newRule.manager) newErrors.manager = 'Manager selection is required';
@@ -104,6 +109,7 @@ const ApprovalRules = () => {
     
     setShowRuleModal(false);
     setNewRule({
+      category: '',
       name: '',
       description: '',
       manager: '',
@@ -190,6 +196,11 @@ const ApprovalRules = () => {
                     <p className="text-white/70 text-sm">{rule.description}</p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {rule.category && (
+                      <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-medium">
+                        {rule.category}
+                      </span>
+                    )}
                     {rule.isManagerApprover && (
                       <span className="px-3 py-1 bg-primary-500/20 text-primary-400 rounded-lg text-xs font-medium">
                         Manager Approval
@@ -251,6 +262,31 @@ const ApprovalRules = () => {
                 </div>
 
                 <form onSubmit={handleSaveRule} className="space-y-6">
+                  {/* Category Selection */}
+                  <div>
+                    <label className="block text-white/90 text-sm font-medium mb-2">
+                      Expense Category
+                    </label>
+                    <select
+                      value={newRule.category}
+                      onChange={(e) => setNewRule({ ...newRule, category: e.target.value })}
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all appearance-none cursor-pointer"
+                      required
+                    >
+                      <option value="" className="bg-[#1e293b] text-white/70">
+                        Select category
+                      </option>
+                      {categories.map(category => (
+                        <option key={category} value={category} className="bg-[#1e293b]">
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.category && (
+                      <p className="text-sm text-red-400 mt-1">{errors.category}</p>
+                    )}
+                  </div>
+
                   {/* Rule Name */}
                   <div>
                     <label className="block text-white/90 text-sm font-medium mb-2">

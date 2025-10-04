@@ -114,6 +114,16 @@ const SignIn = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="glass-card p-8 rounded-3xl"
         >
+          {/* Demo Credentials Info */}
+          <div className="mb-6 p-4 bg-primary-500/10 border border-primary-500/20 rounded-xl">
+            <p className="text-primary-400 font-semibold text-sm mb-2">Demo Accounts:</p>
+            <div className="space-y-1 text-xs text-white/70">
+              <p><span className="font-medium text-white/90">Admin:</span> admin@claimdoo.com / admin123</p>
+              <p><span className="font-medium text-white/90">Manager:</span> manager@claimdoo.com / manager123</p>
+              <p><span className="font-medium text-white/90">Employee:</span> sarah@claimdoo.com / employee123</p>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {errors.general && (
               <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">

@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import UsersManagement from './pages/admin/UsersManagement';
 import ApprovalRules from './pages/admin/ApprovalRules';
+import EmployeeExpenses from './pages/employee/EmployeeExpenses';
 
 // Page Transition Component
 const PageTransition = ({ children }) => (
@@ -71,6 +72,11 @@ function App() {
               <Route path="/dashboard/approval-rules" element={
                 <PageTransition>
                   <ApprovalRules />
+                </PageTransition>
+              } />
+              <Route path="/dashboard/expenses" element={
+                <PageTransition>
+                  <EmployeeExpenses />
                 </PageTransition>
               } />
               <Route path="/settings" element={

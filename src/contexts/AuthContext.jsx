@@ -37,8 +37,61 @@ export const AuthProvider = ({ children }) => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Demo accounts
+      const demoAccounts = {
+        'admin@claimdoo.com': {
+          id: 1,
+          name: 'Admin User',
+          email: 'admin@claimdoo.com',
+          role: 'admin',
+          avatar: null,
+          password: 'admin123'
+        },
+        'manager@claimdoo.com': {
+          id: 2,
+          name: 'Manager User',
+          email: 'manager@claimdoo.com',
+          role: 'manager',
+          avatar: null,
+          password: 'manager123'
+        },
+        'sarah@claimdoo.com': {
+          id: 3,
+          name: 'Sarah Johnson',
+          email: 'sarah@claimdoo.com',
+          role: 'employee',
+          avatar: null,
+          password: 'employee123',
+          department: 'Engineering',
+          manager: 'Manager User'
+        }
+      };
+      
+      // Check if it's a demo account
+      const demoUser = demoAccounts[email];
+      if (demoUser && demoUser.password === password) {
+        const { password: _, ...userWithoutPassword } = demoUser;
+        const mockUser = userWithoutPassword;
+        
+        const mockCompany = {
+          id: 1,
+          name: 'ClaimDoo Demo Company',
+          currency: 'USD',
+          country: 'United States'
+        };
+        
+        setUser(mockUser);
+        setCompany(mockCompany);
+        
+        localStorage.setItem('claimdoo_user', JSON.stringify(mockUser));
+        localStorage.setItem('claimdoo_company', JSON.stringify(mockCompany));
+        
+        return { success: true };
+      }
+      
+      // Default fallback for other emails
       const mockUser = {
-        id: 1,
+        id: Date.now(),
         name: 'John Doe',
         email: email,
         role: 'admin', // admin, manager, employee

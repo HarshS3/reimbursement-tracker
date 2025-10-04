@@ -66,7 +66,7 @@ const Dashboard = () => {
 
   const employeeTabs = [
     { id: 'overview', name: 'Overview', icon: ChartBar },
-    { id: 'my-expenses', name: 'My Expenses', icon: Receipt },
+    { id: 'my-expenses', name: 'My Expenses', icon: Receipt, route: '/dashboard/expenses' },
     { id: 'submit', name: 'Submit Expense', icon: Plus },
   ];
 
