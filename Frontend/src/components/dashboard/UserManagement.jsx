@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, Button, Input, Select, Modal, Badge } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
 import STRINGS from '../../config/strings';
 import { useUserApi } from '../../hooks/useApi';
-import { 
-  Plus, 
-  User, 
-  Envelope, 
-  Shield, 
-  PencilSimple, 
-  Trash,
-  Eye,
-  EyeSlash,
-  PaperPlaneTilt
+import {
+  Plus,
+  User,
+  Envelope,
+  PencilSimple,
+  PaperPlaneTilt,
 } from 'phosphor-react';
+
+const MotionRow = motion.div;
 
 const UserManagement = () => {
   const { user: currentUser, company } = useAuth();
@@ -30,16 +28,36 @@ const UserManagement = () => {
     name: '',
     email: '',
     role: 'employee',
-    manager: '',
+    managerId: '',
     password: ''
   });
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [listError, setListError] = useState(null);
+
+  const managerNameById = useMemo(() => {
+    const map = new Map();
+    users.forEach((u) => {
+      map.set(u.id, u.name);
+    });
+    return map;
+  }, [users]);
+
+  const loadUsers = useCallback(async () => {
+    const result = await getUsers();
+    if (result.success) {
+      setUsers(result.users || []);
+      setListError(null);
+    } else {
+      setUsers([]);
+      setListError(result.error || 'Failed to load users.');
+    }
+  }, [getUsers]);
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   useEffect(() => {
     // Generate random password when modal opens for new user
@@ -51,12 +69,7 @@ const UserManagement = () => {
     }
   }, [showUserModal, editingUser]);
 
-  const loadUsers = async () => {
-    const result = await getUsers();
-    if (result.success) {
-      setUsers(result.users);
-    }
-  };
+  
 
   const generateRandomPassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
@@ -74,7 +87,7 @@ const UserManagement = () => {
         name: user.name,
         email: user.email,
         role: user.role,
-        manager: user.manager || '',
+        managerId: user.managerId ? String(user.managerId) : '',
         password: ''
       });
     } else {
@@ -82,7 +95,7 @@ const UserManagement = () => {
         name: '',
         email: '',
         role: 'employee',
-        manager: '',
+        managerId: '',
         password: generateRandomPassword()
       });
     }
@@ -97,7 +110,7 @@ const UserManagement = () => {
       name: '',
       email: '',
       role: 'employee',
-      manager: '',
+      managerId: '',
       password: ''
     });
     setErrors({});
@@ -154,12 +167,20 @@ const UserManagement = () => {
 
     setSubmitting(true);
     try {
+      const basePayload = {
+        name: formData.name,
+        role: formData.role,
+        managerId: formData.managerId ? Number(formData.managerId) : null,
+      };
+
       let result;
       if (editingUser) {
-        result = await updateUser(editingUser.id, formData);
+        result = await updateUser(editingUser.id, basePayload);
       } else {
         result = await createUser({
-          ...formData,
+          ...basePayload,
+          email: formData.email,
+          password: formData.password,
           companyId: company?.id
         });
       }
@@ -170,7 +191,8 @@ const UserManagement = () => {
       } else {
         setErrors({ general: result.error });
       }
-    } catch (error) {
+    } catch (err) {
+      console.error('Failed to save user', err);
       setErrors({ general: 'Something went wrong. Please try again.' });
     } finally {
       setSubmitting(false);
@@ -198,8 +220,8 @@ const UserManagement = () => {
   const managerOptions = [
     { value: '', label: 'No manager' },
     ...users
-      .filter(user => user.role === 'manager' || user.role === 'admin')
-      .map(user => ({ value: user.name, label: user.name }))
+      .filter(user => ['manager','admin'].includes(String(user.role || '').toLowerCase()))
+      .map(user => ({ value: String(user.id), label: user.name }))
   ];
 
   const getRoleBadgeVariant = (role) => {
@@ -226,6 +248,12 @@ const UserManagement = () => {
             New User
           </Button>
         </div>
+
+        {listError && (
+          <div className="mb-4 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+            <p className="text-red-400 text-sm">{listError}</p>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -254,7 +282,7 @@ const UserManagement = () => {
               </div>
             ) : (
               users.map((user) => (
-                <motion.div
+                <MotionRow
                   key={user.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -282,7 +310,7 @@ const UserManagement = () => {
 
                   <div className="flex items-center">
                     <span className="text-body">
-                      {user.manager || '-'}
+                      {user.managerId ? managerNameById.get(user.managerId) || '-' : '-'}
                     </span>
                   </div>
 
@@ -308,7 +336,7 @@ const UserManagement = () => {
                       Send Password
                     </Button>
                   </div>
-                </motion.div>
+                </MotionRow>
               ))
             )}
           </div>
@@ -348,6 +376,7 @@ const UserManagement = () => {
               onChange={handleInputChange}
               placeholder="Enter email address"
               error={errors.email}
+              disabled={Boolean(editingUser)}
               required
             />
 
@@ -362,11 +391,11 @@ const UserManagement = () => {
 
             <Select
               label="Manager"
-              name="manager"
-              value={formData.manager}
+              name="managerId"
+              value={formData.managerId}
               onChange={handleInputChange}
               options={managerOptions}
-              error={errors.manager}
+              error={errors.managerId}
             />
 
             {!editingUser && (

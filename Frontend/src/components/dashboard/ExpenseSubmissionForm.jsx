@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, Button, Input, Select, TextArea, Modal } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
-import { useExpenseApi, useCurrencyConversion, useExpenseMetadata, useCountries } from '../../hooks/useApi';
+import { useExpenseApi, useCurrencyConversion, useCountries, useRuleApi } from '../../hooks/useApi';
 import STRINGS from '../../config/strings';
 import { Camera, Upload, X, Receipt as ReceiptIcon, CurrencyDollar } from 'phosphor-react';
 import Tesseract from 'tesseract.js';
@@ -11,14 +11,16 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
   const { user, company } = useAuth();
   const { submitExpense, loading: submitting } = useExpenseApi();
   const { convertCurrency } = useCurrencyConversion();
-  const { categories } = useExpenseMetadata();
   const { countries } = useCountries();
+  const { getRules } = useRuleApi();
+  const [rules, setRules] = useState([]);
+  const [rulesError, setRulesError] = useState(null);
   
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
     currency: company?.currency || 'USD',
-    category: '',
+    ruleId: '',
     date: new Date().toISOString().split('T')[0],
     paidBy: user?.name || '',
     remarks: ''
@@ -31,12 +33,31 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
   const [minimized, setMinimized] = useState(false);
   const [convertedAmount, setConvertedAmount] = useState(null);
 
-  const categoryOptions = useMemo(() => (
+  useEffect(() => {
+    const loadRules = async () => {
+      try {
+        const res = await getRules();
+        if (res?.success) {
+          setRules(res.rules || []);
+          setRulesError(null);
+        } else {
+          setRules([]);
+          setRulesError(res?.error || 'Failed to load rules');
+        }
+      } catch (e) {
+        setRules([]);
+        setRulesError('Failed to load rules');
+      }
+    };
+    loadRules();
+  }, [getRules]);
+
+  const ruleOptions = useMemo(() => (
     [
-      { value: '', label: 'Select category' },
-      ...categories.map((category) => ({ value: category.value, label: category.label }))
+      { value: '', label: 'Select an approval rule' },
+      ...rules.map((rule) => ({ value: rule.id || rule.rule_id, label: rule.name }))
     ]
-  ), [categories]);
+  ), [rules]);
 
   const currencyOptions = useMemo(() => {
     const unique = new Map();
@@ -188,8 +209,8 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
       newErrors.amount = 'Valid amount is required';
     }
 
-    if (!formData.category) {
-      newErrors.category = 'Category is required';
+    if (!formData.ruleId) {
+      newErrors.ruleId = 'Approval rule is required';
     }
 
     if (!formData.date) {
@@ -349,13 +370,19 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
               error={errors.currency}
             />
 
+            {rulesError && (
+              <div className="md:col-span-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <p className="text-danger text-sm">{rulesError}</p>
+              </div>
+            )}
+
             <Select
-              label="Category"
-              name="category"
-              value={formData.category}
+              label="Approval Rule"
+              name="ruleId"
+              value={formData.ruleId}
               onChange={handleInputChange}
-              options={categoryOptions}
-              error={errors.category}
+              options={ruleOptions}
+              error={errors.ruleId}
               required
             />
 

@@ -246,11 +246,15 @@ export const useUserApi = () => {
     try {
       setLoading(true);
       setError(null);
+      const roleRaw = String(userData.role || '').trim();
+      const normalizedRole = roleRaw
+        ? roleRaw.charAt(0).toUpperCase() + roleRaw.slice(1).toLowerCase()
+        : 'Employee';
       const resp = await client.post('/users', {
         name: userData.name,
         email: userData.email,
         password: userData.password,
-        role: userData.role,
+        role: normalizedRole,
         managerId: userData.managerId || null,
       });
       return resp.data;
@@ -267,7 +271,14 @@ export const useUserApi = () => {
     try {
       setLoading(true);
       setError(null);
-      const resp = await client.patch(`/users/${userId}`, updates);
+      const payload = { ...updates };
+      if (typeof updates.role !== 'undefined') {
+        const roleRaw = String(updates.role || '').trim();
+        payload.role = roleRaw
+          ? roleRaw.charAt(0).toUpperCase() + roleRaw.slice(1).toLowerCase()
+          : undefined;
+      }
+      const resp = await client.patch(`/users/${userId}`, payload);
       return resp.data;
     } catch (err) {
       console.error('Failed to update user:', err);
@@ -284,5 +295,71 @@ export const useUserApi = () => {
     updateUser,
     loading,
     error
+  };
+};
+
+// Hook for approval rules API calls
+export const useRuleApi = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const getRules = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const resp = await client.get('/rules');
+      return resp.data;
+    } catch (err) {
+      console.error('Failed to fetch rules:', err);
+      setError(err?.response?.data?.message || err.message);
+      return { success: false, error: err?.response?.data?.message || err.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const createRule = useCallback(async (ruleData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const payload = {
+        name: ruleData.name,
+        description: ruleData.description || '',
+        isManagerApprover: !!ruleData.isManagerApprover,
+        minApprovalPercentage:
+          typeof ruleData.minApprovalPercentage === 'number'
+            ? ruleData.minApprovalPercentage
+            : null,
+      };
+      const resp = await client.post('/rules', payload);
+      return resp.data;
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message);
+      return { success: false, error: err?.response?.data?.message || err.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const addRuleApprovers = useCallback(async (ruleId, approvers) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const resp = await client.post(`/rules/${ruleId}/approvers`, { approvers });
+      return resp.data;
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message);
+      return { success: false, error: err?.response?.data?.message || err.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    getRules,
+    createRule,
+    addRuleApprovers,
+    loading,
+    error,
   };
 };

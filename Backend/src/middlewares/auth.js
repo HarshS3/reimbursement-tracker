@@ -30,7 +30,12 @@ function requireRole(...roles) {
       return next(AppError.unauthorized());
     }
 
-    if (roles.length === 0 || roles.includes(req.user.role)) {
+    const userRole = String(req.user.role || '').toLowerCase();
+    const allowed = roles.length === 0
+      ? true
+      : roles.map(r => String(r).toLowerCase()).includes(userRole);
+
+    if (allowed) {
       return next();
     }
 

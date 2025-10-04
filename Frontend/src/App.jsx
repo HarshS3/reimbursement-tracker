@@ -14,8 +14,8 @@ import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
-import UsersManagement from './pages/admin/UsersManagement';
-import ApprovalRules from './pages/admin/ApprovalRules';
+import UsersManagement from './components/dashboard/UserManagement';
+import ApprovalRules from './components/dashboard/ApprovalRules';
 import EmployeeExpenses from './pages/employee/EmployeeExpenses';
 
 // Page Transition Component

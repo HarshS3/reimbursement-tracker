@@ -2,87 +2,108 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, Button, Input, Select, TextArea, Badge } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Plus, 
-  Gear, 
-  Users, 
-  Percent, 
-  CheckCircle, 
-  PencilSimple, 
+import { useRuleApi, useUserApi } from '../../hooks/useApi';
+import {
+  Plus,
+  Gear,
+  Users,
+  Percent,
+  PencilSimple,
   Trash,
-  User
+  User,
 } from 'phosphor-react';
 
 const ApprovalRules = () => {
-  const { user, company } = useAuth();
+  const { user } = useAuth();
+  const { getRules, createRule, addRuleApprovers, loading: loadingRules, error: rulesError } = useRuleApi();
+  const { getUsers } = useUserApi();
+
   const [rules, setRules] = useState([]);
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
-  
+  const [userOptions, setUserOptions] = useState([]);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    ruleType: 'percentage', // 'percentage', 'specific', 'hybrid'
-    manager: '',
-    approvers: [{ name: 'John', required: true }, { name: 'Mitchell', required: false }, { name: 'Andreas', required: false }],
+    ruleType: 'percentage',
+    isManagerApprover: false,
+    approvers: [{ approverId: '', required: false }],
     approverSequence: false,
-    minimumApprovalPercentage: 60
+    minimumApprovalPercentage: 60,
   });
 
   const [errors, setErrors] = useState({});
 
+  // Load rules from API
   useEffect(() => {
-    // Load existing approval rules
-    const savedRules = JSON.parse(localStorage.getItem('claimdoo_approval_rules') || '[]');
-    if (savedRules.length === 0) {
-      // Add default rule for demo
-      const defaultRule = {
-        id: 1,
-        name: 'Approval rule for miscellaneous expenses',
-        description: 'Default approval workflow for general expenses',
-        ruleType: 'percentage',
-        manager: 'Sarah',
-        approvers: [
-          { name: 'John', required: true },
-          { name: 'Mitchell', required: false },
-          { name: 'Andreas', required: false }
-        ],
-        approverSequence: false,
-        minimumApprovalPercentage: 60,
-        createdAt: new Date().toISOString()
-      };
-      setRules([defaultRule]);
-      localStorage.setItem('claimdoo_approval_rules', JSON.stringify([defaultRule]));
-    } else {
-      setRules(savedRules);
-    }
-  }, []);
+    const load = async () => {
+      const result = await getRules();
+      if (result?.success) {
+        setRules(result.rules || []);
+      } else {
+        setRules([]);
+      }
+    };
+    load();
+  }, [getRules]);
+
+  // Load users for approver dropdown
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await getUsers();
+        if (res?.success && Array.isArray(res.users)) {
+          const options = res.users
+            .map((u) => ({
+              value: u.id || u.userId || u._id,
+              label: u.name || u.fullName || u.employeeName || u.email,
+            }))
+            .filter((o) => o.value && o.label);
+          setUserOptions(options);
+        }
+      } catch (_) {
+        // ignore silently; keep empty managers list
+      }
+    };
+    loadUsers();
+  }, [getUsers]);
 
   const handleOpenForm = (rule = null) => {
     setEditingRule(rule);
     if (rule) {
       setFormData({
-        name: rule.name,
-        description: rule.description,
-        ruleType: rule.ruleType,
-        manager: rule.manager,
-        approvers: rule.approvers,
-        approverSequence: rule.approverSequence,
-        minimumApprovalPercentage: rule.minimumApprovalPercentage
+        name: rule.name || '',
+        description: rule.description || '',
+        ruleType:
+          rule.min_approval_percentage !== null &&
+          rule.min_approval_percentage !== undefined
+            ? 'percentage'
+            : 'specific',
+        isManagerApprover: !!rule.is_manager_approver,
+        approvers: Array.isArray(rule.approvers)
+          ? rule.approvers.map((a) => ({
+              approverId: a.approver_id || a.id || a.user_id || '',
+              required: typeof a.is_mandatory === 'boolean' ? a.is_mandatory : !!a.required,
+            }))
+          : [{ approverId: '', required: false }],
+        approverSequence: false,
+        minimumApprovalPercentage:
+          rule.min_approval_percentage ?? formData.minimumApprovalPercentage,
       });
     } else {
       setFormData({
         name: '',
         description: '',
         ruleType: 'percentage',
-        manager: '',
-        approvers: [{ name: '', required: false }],
+        isManagerApprover: false,
+        approvers: [{ approverId: '', required: false }],
         approverSequence: false,
-        minimumApprovalPercentage: 60
+        minimumApprovalPercentage: 60,
       });
     }
-    setErrors({});
     setShowRuleForm(true);
+    setErrors({});
   };
 
   const handleCloseForm = () => {
@@ -93,15 +114,15 @@ const ApprovalRules = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
 
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }));
     }
   };
@@ -109,91 +130,92 @@ const ApprovalRules = () => {
   const handleApproverChange = (index, field, value) => {
     const updatedApprovers = [...formData.approvers];
     updatedApprovers[index][field] = value;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      approvers: updatedApprovers
+      approvers: updatedApprovers,
     }));
   };
 
   const addApprover = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      approvers: [...prev.approvers, { name: '', required: false }]
+      approvers: [...prev.approvers, { approverId: '', required: false }],
     }));
   };
 
   const removeApprover = (index) => {
     if (formData.approvers.length > 1) {
       const updatedApprovers = formData.approvers.filter((_, i) => i !== index);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        approvers: updatedApprovers
+        approvers: updatedApprovers,
       }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Rule name is required';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-
-    if (formData.ruleType === 'percentage' && (formData.minimumApprovalPercentage < 1 || formData.minimumApprovalPercentage > 100)) {
+    if (!formData.name.trim()) newErrors.name = 'Rule name is required';
+    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    if (
+      formData.ruleType === 'percentage' &&
+      (formData.minimumApprovalPercentage < 1 || formData.minimumApprovalPercentage > 100)
+    ) {
       newErrors.minimumApprovalPercentage = 'Percentage must be between 1 and 100';
     }
-
-    const validApprovers = formData.approvers.filter(approver => approver.name.trim());
-    if (validApprovers.length === 0) {
-      newErrors.approvers = 'At least one approver is required';
-    }
-
+  const validApprovers = formData.approvers.filter((a) => String(a.approverId).trim());
+    if (validApprovers.length === 0) newErrors.approvers = 'At least one approver is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
-
-    const ruleData = {
-      ...formData,
-      approvers: formData.approvers.filter(approver => approver.name.trim()),
-      id: editingRule ? editingRule.id : Date.now(),
-      createdAt: editingRule ? editingRule.createdAt : new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    let updatedRules;
-    if (editingRule) {
-      updatedRules = rules.map(rule => rule.id === editingRule.id ? ruleData : rule);
-    } else {
-      updatedRules = [...rules, ruleData];
+    try {
+      const minPct = formData.ruleType === 'percentage' ? Number(formData.minimumApprovalPercentage) : null;
+      const created = await createRule({
+        name: formData.name,
+        description: formData.description,
+        isManagerApprover: !!formData.isManagerApprover,
+        minApprovalPercentage: minPct,
+      });
+      if (!created?.success) {
+        setErrors((prev) => ({ ...prev, general: created?.message || 'Failed to create rule' }));
+        return;
+      }
+      const newRuleId = created.rule?.id || created.ruleId || created.id;
+      const approversPayload = formData.approvers
+        .map((a, idx) => ({
+          approverId: a.approverId,
+          sequence: formData.approverSequence ? idx + 1 : 1,
+          isMandatory: !!a.required,
+        }))
+        .filter((a) => String(a.approverId).trim());
+      if (newRuleId && approversPayload.length > 0) {
+        const added = await addRuleApprovers(newRuleId, approversPayload);
+        if (!added?.success) {
+          setErrors((prev) => ({ ...prev, general: added?.message || 'Failed to add approvers' }));
+          return;
+        }
+      }
+      const refreshed = await getRules();
+      setRules(refreshed?.rules || []);
+      handleCloseForm();
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, general: 'Something went wrong. Please try again.' }));
     }
-
-    setRules(updatedRules);
-    localStorage.setItem('claimdoo_approval_rules', JSON.stringify(updatedRules));
-    handleCloseForm();
   };
 
   const deleteRule = (ruleId) => {
-    const updatedRules = rules.filter(rule => rule.id !== ruleId);
-    setRules(updatedRules);
-    localStorage.setItem('claimdoo_approval_rules', JSON.stringify(updatedRules));
+    // Only update local state for now
+    setRules((prev) => prev.filter((r) => r.id !== ruleId && r.rule_id !== ruleId));
   };
 
   const ruleTypeOptions = [
     { value: 'percentage', label: 'Percentage Rule' },
     { value: 'specific', label: 'Specific Approver Rule' },
-    { value: 'hybrid', label: 'Hybrid Rule' }
   ];
-
-  const availableManagers = ['Sarah', 'Michael', 'David', 'Emma'];
 
   return (
     <div className="space-y-6">
@@ -213,7 +235,21 @@ const ApprovalRules = () => {
           </Button>
         </div>
 
-        {rules.length === 0 ? (
+        {rulesError && (
+          <div className="mb-4 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+            <p className="text-red-400 text-sm">{String(rulesError)}</p>
+          </div>
+        )}
+
+        {loadingRules ? (
+          <div className="flex items-center justify-center py-12">
+            <div
+              className="animate-spin rounded-full h-8 w-8 border-b-2"
+              style={{ borderColor: 'var(--primary-light)' }}
+            />
+            <span className="ml-3 text-body">Loading rules...</span>
+          </div>
+        ) : rules.length === 0 ? (
           <div className="text-center py-12">
             <Gear size={48} className="text-white/30 mx-auto mb-4" />
             <p className="text-white/60 text-lg">No approval rules configured</p>
@@ -223,7 +259,7 @@ const ApprovalRules = () => {
           <div className="space-y-4">
             {rules.map((rule) => (
               <motion.div
-                key={rule.id}
+                key={rule.id || rule.rule_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="glass-card rounded-xl p-6"
@@ -236,11 +272,15 @@ const ApprovalRules = () => {
                     <div className="flex items-center space-x-4 text-sm">
                       <div className="flex items-center">
                         <User size={14} className="text-muted mr-1" />
-                        <span className="text-body">Manager: {rule.manager}</span>
+                        <span className="text-body">
+                          Manager approval: {rule.is_manager_approver ? 'Yes' : 'No'}
+                        </span>
                       </div>
                       
                       <Badge variant="info" className="capitalize">
-                        {rule.ruleType} Rule
+                        {rule.min_approval_percentage !== null && rule.min_approval_percentage !== undefined
+                          ? `${rule.min_approval_percentage}% min`
+                          : 'All approvers'}
                       </Badge>
                     </div>
                   </div>
@@ -257,7 +297,7 @@ const ApprovalRules = () => {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => deleteRule(rule.id)}
+                      onClick={() => deleteRule(rule.id || rule.rule_id)}
                       className="p-2 text-red-400 hover:bg-red-500/10"
                     >
                       <Trash size={14} />
@@ -273,15 +313,15 @@ const ApprovalRules = () => {
                         Approvers
                       </h4>
                       <div className="space-y-2">
-                        {rule.approvers.map((approver, index) => (
+                        {Array.isArray(rule.approvers) && rule.approvers.map((approver, index) => (
                           <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg p-2">
                             <div className="flex items-center">
                               <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center mr-2">
                                 <span className="text-white text-xs">{index + 1}</span>
                               </div>
-                              <span className="text-body">{approver.name}</span>
+                              <span className="text-body">{approver.name || approver.employee_name || approver.email}</span>
                             </div>
-                            {approver.required ? (
+                            {(approver.required || approver.is_mandatory) ? (
                               <Badge variant="success" className="text-xs">Required</Badge>
                             ) : (
                               <Badge variant="default" className="text-xs">Optional</Badge>
@@ -297,42 +337,21 @@ const ApprovalRules = () => {
                         Rule Configuration
                       </h4>
                       <div className="space-y-3">
-                        {rule.ruleType === 'percentage' && (
-                          <div className="bg-white/5 rounded-lg p-3">
-                            <div className="flex items-center text-body">
-                              <Percent size={16} className="mr-2" />
-                              <span>Minimum Approval: {rule.minimumApprovalPercentage}%</span>
-                            </div>
-                            <p className="text-xs text-muted mt-1">
-                              Specify the number of percentage approvers required in order to get the request approved.
-                            </p>
-                          </div>
-                        )}
-                        
                         <div className="bg-white/5 rounded-lg p-3">
                           <div className="flex items-center text-body">
-                            <CheckCircle size={16} className="mr-2" />
-                            <span>Sequential Approval: {rule.approverSequence ? 'Yes' : 'No'}</span>
+                            <Percent size={16} className="mr-2" />
+                            <span>
+                              Minimum Approval:{' '}
+                              {rule.min_approval_percentage !== null && rule.min_approval_percentage !== undefined
+                                ? `${rule.min_approval_percentage}%`
+                                : 'All approvers'}
+                            </span>
                           </div>
-                          {rule.approverSequence ? (
-                            <p className="text-xs text-muted mt-1">
-                              If this field is ticked true then the above mentioned sequence of approvers matters, 
-                              that is first the request goes to John, if he approves/rejects then only request goes 
-                              to mitchell and so on.
-                            </p>
-                          ) : (
-                            <p className="text-xs text-muted mt-1">
-                              If not ticked then send approver request to all approvers at the same time.
-                            </p>
-                          )}
-                        </div>
-                        
-                        {!rule.approverSequence && (
-                          <p className="text-xs text-muted">
-                            If the required approver rejects the request, then expense request is auto-rejected.
-                            If not ticked then send approver request to all approvers at the same time.
+                          <p className="text-xs text-muted mt-1">
+                            Specify the minimum percentage of approvers required for approval.
                           </p>
-                        )}
+                        </div>
+                        {/* Additional rule settings can be displayed here when available */}
                       </div>
                     </div>
                   </div>
@@ -404,16 +423,7 @@ const ApprovalRules = () => {
                   rows={3}
                 />
 
-                <Select
-                  label="Manager"
-                  name="manager"
-                  value={formData.manager}
-                  onChange={handleInputChange}
-                  options={[
-                    { value: '', label: 'Select manager' },
-                    ...availableManagers.map(manager => ({ value: manager, label: manager }))
-                  ]}
-                />
+                {/* Manager field removed */}
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -435,11 +445,11 @@ const ApprovalRules = () => {
                       </div>
                       
                       <div className="flex-1">
-                        <Input
-                          placeholder="Approver name"
-                          value={approver.name}
-                          onChange={(e) => handleApproverChange(index, 'name', e.target.value)}
-                          className="bg-transparent border-white/10"
+                        <Select
+                          placeholder="Select approver"
+                          value={approver.approverId}
+                          onChange={(e) => handleApproverChange(index, 'approverId', e.target.value)}
+                          options={[{ value: '', label: 'Select approver' }, ...userOptions]}
                         />
                       </div>
                       
@@ -481,6 +491,16 @@ const ApprovalRules = () => {
                       className="rounded border-white/20 bg-transparent text-primary-500 focus:ring-primary-500/20 mr-3"
                     />
                     <span className="text-white font-medium">Approvers Sequence</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isManagerApprover"
+                      checked={formData.isManagerApprover}
+                      onChange={handleInputChange}
+                      className="rounded border-white/20 bg-transparent text-primary-500 focus:ring-primary-500/20 mr-3"
+                    />
+                    <span className="text-white font-medium">Include direct manager as first approver</span>
                   </label>
                   <p className="text-xs text-white/60">
                     If this field is ticked true then the above mentioned sequence of approvers matters,
