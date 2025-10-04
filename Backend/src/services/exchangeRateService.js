@@ -77,17 +77,17 @@ async function convertAmount(amount, fromCurrency, toCurrency) {
     };
   }
 
-  const rates = await fetchRates(normalizedTo);
-  const rate = rates[normalizedFrom];
+  const rates = await fetchRates(normalizedFrom);
+  const rate = rates[normalizedTo];
 
   if (!rate) {
-    throw AppError.badRequest(`Currency ${normalizedFrom} is not supported by exchange service`);
+    throw AppError.badRequest(`Currency ${normalizedTo} is not supported by exchange service`);
   }
 
-  const convertedAmount = roundToTwo(numericAmount / rate);
+  const convertedAmount = roundToTwo(numericAmount * rate);
   return {
     convertedAmount,
-    rate: convertedAmount / numericAmount,
+    rate,
   };
 }
 

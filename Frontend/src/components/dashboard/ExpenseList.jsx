@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, Button, Badge, Input, Select } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
-import { useExpenseApi } from '../../hooks/useApi';
-import { 
-  Receipt, 
-  Calendar, 
-  CurrencyDollar, 
+import { useExpenseApi, useExpenseMetadata } from '../../hooks/useApi';
+import {
+  Receipt,
+  Calendar,
+  CurrencyDollar,
   MagnifyingGlass,
-  FunnelSimple,
-  Eye,
-  Download
+  Download,
 } from 'phosphor-react';
 
 const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
-  const { user, isAdmin, isManager } = useAuth();
+  const { isAdmin } = useAuth();
   const { getExpenses, loading } = useExpenseApi();
-  
+  const { categories: categoryMetadata, statuses: statusMetadata } = useExpenseMetadata();
+
   const [expenses, setExpenses] = useState(initialExpenses || []);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,89 +39,93 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
   }, [expenses, searchTerm, statusFilter, categoryFilter]);
 
   const loadExpenses = async () => {
-    const filters = {};
-    if (!isAdmin) {
-      filters.userId = user?.id; // Only show user's own expenses for non-admins
-    }
-    
-    const result = await getExpenses(filters);
+    const result = await getExpenses();
     if (result.success) {
       setExpenses(result.expenses);
+      onRefresh?.(result.expenses);
     }
   };
 
   const filterExpenses = () => {
     let filtered = [...expenses];
+    const search = searchTerm.trim().toLowerCase();
 
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(expense =>
-        expense.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        expense.paidBy?.toLowerCase().includes(searchTerm.toLowerCase())
+    if (search) {
+      filtered = filtered.filter((expense) =>
+        expense.description?.toLowerCase().includes(search) ||
+        expense.employeeName?.toLowerCase().includes(search) ||
+        expense.employeeEmail?.toLowerCase().includes(search)
       );
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(expense => expense.status === statusFilter);
+      filtered = filtered.filter((expense) => expense.status === statusFilter);
     }
 
-    // Category filter
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(expense => expense.category === categoryFilter);
+      filtered = filtered.filter(
+        (expense) => (expense.category || '').toLowerCase() === categoryFilter.toLowerCase()
+      );
     }
 
-    // Sort by date (newest first)
-    filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    filtered.sort(
+      (a, b) => new Date(b.createdAt || b.expenseDate) - new Date(a.createdAt || a.expenseDate)
+    );
 
     setFilteredExpenses(filtered);
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getBadgeVariant = (status) => {
     switch (status) {
-      case 'approved': return 'success';
-      case 'rejected': return 'error';
-      case 'pending': return 'warning';
-      default: return 'default';
+      case 'Approved':
+        return 'success';
+      case 'Rejected':
+        return 'error';
+      case 'Waiting Approval':
+        return 'warning';
+      case 'Draft':
+      default:
+        return 'default';
     }
   };
 
-  const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' }
-  ];
+  const statusOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All Statuses' },
+      ...statusMetadata.map((status) => ({ value: status.value, label: status.label })),
+    ],
+    [statusMetadata]
+  );
 
-  const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'food', label: 'Food & Dining' },
-    { value: 'transport', label: 'Transportation' },
-    { value: 'accommodation', label: 'Accommodation' },
-    { value: 'office', label: 'Office Supplies' },
-    { value: 'travel', label: 'Travel' },
-    { value: 'entertainment', label: 'Entertainment' },
-    { value: 'other', label: 'Other' }
-  ];
+  const categoryOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All Categories' },
+      ...categoryMetadata.map((category) => ({ value: category.value, label: category.label })),
+    ],
+    [categoryMetadata]
+  );
 
   return (
     <div className="space-y-6">
       <Card>
-            <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold text-heading mb-2">
               {isAdmin ? 'All Expenses' : 'My Expenses'}
             </h2>
             <p className="body-text text-body">
-              {isAdmin ? 'View and manage all company expenses' : 'Track your submitted expense claims'}
+              {isAdmin
+                ? 'View and manage all company expenses'
+                : 'Track your submitted expense claims'}
             </p>
           </div>
           <div className="text-right">
@@ -133,10 +136,12 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="relative">
-            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" />
+            <MagnifyingGlass
+              size={16}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40"
+            />
             <Input
               placeholder="Search expenses..."
               value={searchTerm}
@@ -144,19 +149,19 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
               className="pl-10"
             />
           </div>
-          
+
           <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={statusOptions}
           />
-          
+
           <Select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             options={categoryOptions}
           />
-          
+
           <Button variant="secondary" className="flex items-center">
             <Download size={16} className="mr-2" />
             Export
@@ -172,15 +177,18 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
           <div className="text-center py-12">
             <Receipt size={48} className="text-white/30 mx-auto mb-4" />
             <p className="text-white/60 text-lg">
-              {expenses.length === 0 ? 'No expenses found' : 'No expenses match your filters'}
+              {expenses.length === 0
+                ? 'No expenses found'
+                : 'No expenses match your filters'}
             </p>
             <p className="text-white/40 text-sm">
-              {expenses.length === 0 ? 'Submit your first expense to get started!' : 'Try adjusting your search criteria'}
+              {expenses.length === 0
+                ? 'Submit your first expense to get started!'
+                : 'Try adjusting your search criteria'}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Header Row */}
             <div className="grid grid-cols-7 gap-4 p-4 text-sm font-medium text-muted border-b border-muted">
               <div>Employee</div>
               <div>Description</div>
@@ -192,7 +200,6 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
               <div>Status</div>
             </div>
 
-            {/* Expense Rows */}
             {filteredExpenses.map((expense) => (
               <motion.div
                 key={expense.id}
@@ -203,10 +210,12 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mr-2">
                     <span className="text-white text-xs font-medium">
-                      {(expense.paidBy || 'U').charAt(0)}
+                      {(expense.employeeName || expense.paidBy || 'U').charAt(0)}
                     </span>
                   </div>
-                  <span className="text-body text-sm">{expense.paidBy || 'Unknown'}</span>
+                  <span className="text-body text-sm">
+                    {expense.employeeName || expense.paidBy || 'Unknown'}
+                  </span>
                 </div>
 
                 <div className="flex items-center">
@@ -216,24 +225,24 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
                       {expense.description}
                     </div>
                     <div className="text-xs text-muted">
-                      Submitted {formatDate(expense.submittedAt)}
+                      Submitted {formatDate(expense.createdAt)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center">
                   <Calendar size={14} className="text-muted mr-2" />
-                  <span className="text-body text-sm">{formatDate(expense.date)}</span>
+                  <span className="text-body text-sm">{formatDate(expense.expenseDate)}</span>
                 </div>
 
                 <div className="flex items-center">
                   <Badge variant="info" className="capitalize text-xs">
-                    {expense.category}
+                    {expense.category || 'Unspecified'}
                   </Badge>
                 </div>
 
                 <div className="flex items-center">
-                  <span className="text-white/80 text-sm">{expense.paidBy}</span>
+                  <span className="text-white/80 text-sm">{expense.paidBy || '-'}</span>
                 </div>
 
                 <div className="flex items-center">
@@ -246,11 +255,12 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
                   <CurrencyDollar size={14} className="text-primary mr-1" />
                   <div className="text-sm">
                     <div className="text-heading font-medium">
-                      {expense.currency} {parseFloat(expense.amount).toFixed(2)}
+                      {expense.currency} {parseFloat(expense.amount || 0).toFixed(2)}
                     </div>
-                    {expense.convertedAmount && (
+                    {expense.originalCurrency && expense.originalCurrency !== expense.currency && (
                       <div className="text-xs text-muted">
-                         {expense.baseCurrency} {expense.convertedAmount.toFixed(2)}
+                        Original: {expense.originalCurrency}{' '}
+                        {parseFloat(expense.originalAmount || 0).toFixed(2)}
                       </div>
                     )}
                   </div>
@@ -260,13 +270,13 @@ const ExpenseList = ({ expenses: initialExpenses, onRefresh }) => {
                   <Badge variant={getBadgeVariant(expense.status)} className="capitalize">
                     {expense.status}
                   </Badge>
-                  {expense.status === 'approved' && (
+                  {expense.status === 'Approved' && (
                     <div className="text-xs text-success">
-                      {formatDate(expense.approvalHistory?.[0]?.approvedAt || expense.submittedAt)}
+                      {formatDate(expense.updatedAt || expense.createdAt)}
                     </div>
                   )}
-                  {expense.status === 'rejected' && expense.approvalHistory?.[0]?.comments && (
-                    <div className="text-xs text-danger" title={expense.approvalHistory[0].comments}>
+                  {expense.status === 'Rejected' && expense.approvals?.[0]?.comments && (
+                    <div className="text-xs text-danger" title={expense.approvals[0].comments}>
                       View reason
                     </div>
                   )}

@@ -1,5 +1,23 @@
 const fetch = require('node-fetch');
 const AppError = require('../utils/errors');
+const { convertAmount } = require('./exchangeRateService');
+
+const EXPENSE_CATEGORIES = [
+  { value: 'food', label: 'Food & Dining' },
+  { value: 'transport', label: 'Transportation' },
+  { value: 'accommodation', label: 'Accommodation' },
+  { value: 'office', label: 'Office Supplies' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'entertainment', label: 'Entertainment' },
+  { value: 'other', label: 'Other' },
+];
+
+const EXPENSE_STATUSES = [
+  { value: 'Draft', label: 'To Submit' },
+  { value: 'Waiting Approval', label: 'Waiting Approval' },
+  { value: 'Approved', label: 'Approved' },
+  { value: 'Rejected', label: 'Rejected' },
+];
 
 const REST_COUNTRIES_URL = 'https://restcountries.com/v3.1/all?fields=name,currencies';
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
@@ -64,6 +82,40 @@ async function getCountries() {
   return countries;
 }
 
+async function convertCurrency(amount, fromCurrency, toCurrency) {
+  if (typeof amount === 'undefined' || amount === null) {
+    throw AppError.badRequest('amount is required');
+  }
+
+  if (!fromCurrency || !toCurrency) {
+    throw AppError.badRequest('from and to currencies are required');
+  }
+
+  const numericAmount = Number(amount);
+  if (Number.isNaN(numericAmount) || numericAmount < 0) {
+    throw AppError.badRequest('amount must be a positive number');
+  }
+
+  const result = await convertAmount(numericAmount, fromCurrency, toCurrency);
+  return {
+    success: true,
+    convertedAmount: result.convertedAmount,
+    rate: result.rate,
+    amount: numericAmount,
+    from: fromCurrency.toUpperCase(),
+    to: toCurrency.toUpperCase(),
+  };
+}
+
+function getExpenseMetadata() {
+  return {
+    categories: EXPENSE_CATEGORIES,
+    statuses: EXPENSE_STATUSES,
+  };
+}
+
 module.exports = {
   getCountries,
+  convertCurrency,
+  getExpenseMetadata,
 };

@@ -16,6 +16,16 @@ export const AuthProvider = ({ children }) => {
   const [company, setCompany] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const role = user?.role || null;
+  const isAdmin = role === 'Admin';
+  const isManager = role === 'Manager';
+  const isEmployee = role === 'Employee';
+
+  const setSession = (profile) => {
+    setUser(profile);
+    setCompany(profile?.company || null);
+    setIsAuthenticated(true);
+  };
 
   // Load stored token/profile on init
   useEffect(() => {
@@ -27,10 +37,8 @@ export const AuthProvider = ({ children }) => {
       }
       try {
         const resp = await client.get('/auth/me');
-        if (resp.data && resp.data.success) {
-          setUser(resp.data.user);
-          setCompany(resp.data.user.company || null);
-          setIsAuthenticated(true);
+        if (resp.data && resp.data.success && resp.data.user) {
+          setSession(resp.data.user);
         } else {
           localStorage.removeItem('claimdoo_token');
         }
@@ -43,14 +51,32 @@ export const AuthProvider = ({ children }) => {
     init();
   }, []);
 
-  const signIn = async (credentials) => {
+  const refreshProfile = async () => {
     try {
-      const resp = await client.post('/auth/login', credentials);
-      if (resp.data && resp.data.user && resp.data.token) {
+      const resp = await client.get('/auth/me');
+      if (resp.data?.success && resp.data?.user) {
+        setSession(resp.data.user);
+        return { success: true, user: resp.data.user };
+      }
+      return { success: false };
+    } catch (err) {
+      localStorage.removeItem('claimdoo_token');
+      setUser(null);
+      setCompany(null);
+      setIsAuthenticated(false);
+      return { success: false, error: err?.response?.data?.message || err.message };
+    }
+  };
+
+  const signIn = async (email, password) => {
+    try {
+      const resp = await client.post('/auth/login', {
+        email,
+        password,
+      });
+      if (resp.data?.user && resp.data?.token) {
         localStorage.setItem('claimdoo_token', resp.data.token);
-        setUser(resp.data.user);
-        setCompany(resp.data.user.company || null);
-        setIsAuthenticated(true);
+        setSession(resp.data.user);
         return { success: true, user: resp.data.user };
       }
       return { success: false, error: 'Invalid response' };
@@ -62,11 +88,9 @@ export const AuthProvider = ({ children }) => {
   const signUp = async (payload) => {
     try {
       const resp = await client.post('/auth/signup', payload);
-      if (resp.data && resp.data.user && resp.data.token) {
+      if (resp.data?.user && resp.data?.token) {
         localStorage.setItem('claimdoo_token', resp.data.token);
-        setUser(resp.data.user);
-        setCompany(resp.data.company || null);
-        setIsAuthenticated(true);
+        setSession(resp.data.user);
         return { success: true, user: resp.data.user };
       }
       return { success: false, error: 'Invalid response' };
@@ -87,11 +111,16 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         company,
+        role,
+        isAdmin,
+        isManager,
+        isEmployee,
         isAuthenticated,
         loadingAuth,
         signIn,
         signUp,
         signOut,
+        refreshProfile,
       }}
     >
       {children}

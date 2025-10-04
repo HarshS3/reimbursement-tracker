@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, Button, Input, Select, TextArea, Modal } from '../ui';
 import { useAuth } from '../../contexts/AuthContext';
-import { useExpenseApi, useCurrencyConversion } from '../../hooks/useApi';
+import { useExpenseApi, useCurrencyConversion, useExpenseMetadata, useCountries } from '../../hooks/useApi';
 import STRINGS from '../../config/strings';
-import { Camera, Upload, X, Receipt as ReceiptIcon, CurrencyDollar, FileText } from 'phosphor-react';
+import { Camera, Upload, X, Receipt as ReceiptIcon, CurrencyDollar } from 'phosphor-react';
 import Tesseract from 'tesseract.js';
-import { CATEGORIES } from '../../config/sampleData';
 
 const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
   const { user, company } = useAuth();
   const { submitExpense, loading: submitting } = useExpenseApi();
   const { convertCurrency } = useCurrencyConversion();
+  const { categories } = useExpenseMetadata();
+  const { countries } = useCountries();
   
   const [formData, setFormData] = useState({
     description: '',
@@ -30,17 +31,48 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
   const [minimized, setMinimized] = useState(false);
   const [convertedAmount, setConvertedAmount] = useState(null);
 
-  const categories = CATEGORIES;
+  const categoryOptions = useMemo(() => (
+    [
+      { value: '', label: 'Select category' },
+      ...categories.map((category) => ({ value: category.value, label: category.label }))
+    ]
+  ), [categories]);
 
-  const currencies = [
-    { value: 'USD', label: 'USD - US Dollar' },
-    { value: 'EUR', label: 'EUR - Euro' },
-    { value: 'GBP', label: 'GBP - British Pound' },
-    { value: 'CAD', label: 'CAD - Canadian Dollar' },
-    { value: 'AUD', label: 'AUD - Australian Dollar' },
-    { value: 'JPY', label: 'JPY - Japanese Yen' },
-    { value: 'INR', label: 'INR - Indian Rupee' }
-  ];
+  const currencyOptions = useMemo(() => {
+    const unique = new Map();
+
+    countries.forEach((country) => {
+      (country.currencies || []).forEach((currency) => {
+        if (currency?.code && !unique.has(currency.code)) {
+          const label = currency?.name ? `${currency.code} - ${currency.name}` : currency.code;
+          unique.set(currency.code, label);
+        }
+      });
+    });
+
+    if (company?.currency && !unique.has(company.currency)) {
+      unique.set(company.currency, `${company.currency} - Base Currency`);
+    }
+
+    let options = Array.from(unique.entries()).map(([value, label]) => ({ value, label }));
+
+    if (options.length === 0) {
+      const fallback = company?.currency || 'USD';
+      return [{ value: fallback, label: `${fallback} - Base Currency` }];
+    }
+
+    options.sort((a, b) => a.value.localeCompare(b.value));
+
+    if (company?.currency) {
+      const baseIndex = options.findIndex((option) => option.value === company.currency);
+      if (baseIndex > 0) {
+        const [baseOption] = options.splice(baseIndex, 1);
+        options.unshift(baseOption);
+      }
+    }
+
+    return options;
+  }, [countries, company?.currency]);
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -313,7 +345,7 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
               name="currency"
               value={formData.currency}
               onChange={handleInputChange}
-              options={currencies}
+              options={currencyOptions}
               error={errors.currency}
             />
 
@@ -322,7 +354,7 @@ const ExpenseSubmissionForm = ({ onClose, onSuccess }) => {
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              options={[{ value: '', label: 'Select category' }, ...categories]}
+              options={categoryOptions}
               error={errors.category}
               required
             />

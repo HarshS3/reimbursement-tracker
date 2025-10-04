@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,7 +6,7 @@ import { Card, Button, Badge } from '../components/ui';
 import ExpenseSubmissionForm from '../components/dashboard/ExpenseSubmissionForm';
 import ExpenseList from '../components/dashboard/ExpenseList';
 import ApprovalQueue from '../components/dashboard/ApprovalQueue';
-import { useExpenseApi } from '../hooks/useApi';
+import { useExpenseApi, useExpenseMetadata } from '../hooks/useApi';
 import {
   Plus,
   Receipt,
@@ -25,7 +25,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expenses, setExpenses] = useState([]);
-  const { getExpenses, loading } = useExpenseApi();
+  const { getExpenses } = useExpenseApi();
+  const { statuses } = useExpenseMetadata();
 
   useEffect(() => {
     loadExpenses();
@@ -38,18 +39,73 @@ const Dashboard = () => {
     }
   };
 
-  const getDashboardStats = () => {
-    const pending = expenses.filter(exp => exp.status === 'pending').length;
-    const approved = expenses.filter(exp => exp.status === 'approved').length;
-    const rejected = expenses.filter(exp => exp.status === 'rejected').length;
-    const totalAmount = expenses
-      .filter(exp => exp.status === 'approved')
-      .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0);
+  const normalizeStatus = (value) =>
+    String(value || '')
+      .trim()
+      .replace(/\s+/g, '_')
+      .toLowerCase();
 
-    return { pending, approved, rejected, totalAmount };
+  const statusMap = useMemo(() => {
+    const map = new Map();
+    statuses.forEach((status) => {
+      const valueKey = normalizeStatus(status.value);
+      if (valueKey && !map.has(valueKey)) {
+        map.set(valueKey, status);
+      }
+
+      const labelKey = normalizeStatus(status.label);
+      if (labelKey && !map.has(labelKey)) {
+        map.set(labelKey, status);
+      }
+    });
+    return map;
+  }, [statuses]);
+
+  const stats = useMemo(() =>
+    expenses.reduce(
+      (acc, exp) => {
+        const key = normalizeStatus(exp.status);
+        if (key === 'approved') {
+          acc.approved += 1;
+          acc.totalAmount += Number.parseFloat(exp.amount || 0) || 0;
+        } else if (key === 'rejected') {
+          acc.rejected += 1;
+        } else if (key === 'waiting_approval' || key === 'pending') {
+          acc.pending += 1;
+        }
+        return acc;
+      },
+      { pending: 0, approved: 0, rejected: 0, totalAmount: 0 }
+    ),
+  [expenses]);
+
+  const statusDisplay = useMemo(() => {
+    const findStatus = (predicateKeys) => {
+      for (const candidate of predicateKeys) {
+        const match = statusMap.get(candidate);
+        if (match) return match;
+      }
+      return null;
+    };
+
+    return {
+      pending: findStatus(['waiting_approval', 'pending']),
+      approved: findStatus(['approved']),
+      rejected: findStatus(['rejected']),
+    };
+  }, [statusMap]);
+
+  const getStatusVariant = (status) => {
+    const key = normalizeStatus(status);
+    if (key === 'approved') return 'success';
+    if (key === 'rejected') return 'error';
+    return 'warning';
   };
 
-  const stats = getDashboardStats();
+  const getStatusLabel = (status) => {
+    const key = normalizeStatus(status);
+    return statusMap.get(key)?.label || status || 'Unknown';
+  };
 
   const adminTabs = [
     { id: 'overview', name: 'Overview', icon: ChartBar },
@@ -105,7 +161,7 @@ const Dashboard = () => {
             </div>
             <div>
               <div className="text-2xl font-semibold text-white">{stats.pending}</div>
-              <div className="text-sm text-white/60">Pending</div>
+              <div className="text-sm text-white/60">{statusDisplay.pending?.label || 'Waiting Approval'}</div>
             </div>
           </div>
         </Card>
@@ -117,7 +173,7 @@ const Dashboard = () => {
             </div>
             <div>
               <div className="text-2xl font-semibold text-white">{stats.approved}</div>
-              <div className="text-sm text-white/60">Approved</div>
+              <div className="text-sm text-white/60">{statusDisplay.approved?.label || 'Approved'}</div>
             </div>
           </div>
         </Card>
@@ -129,7 +185,7 @@ const Dashboard = () => {
             </div>
             <div>
               <div className="text-2xl font-semibold text-white">{stats.rejected}</div>
-              <div className="text-sm text-white/60">Rejected</div>
+              <div className="text-sm text-white/60">{statusDisplay.rejected?.label || 'Rejected'}</div>
             </div>
           </div>
         </Card>
@@ -171,12 +227,9 @@ const Dashboard = () => {
                   {expense.currency} {expense.amount}
                 </div>
                 <Badge 
-                  variant={
-                    expense.status === 'approved' ? 'success' :
-                    expense.status === 'rejected' ? 'error' : 'warning'
-                  }
+                  variant={getStatusVariant(expense.status)}
                 >
-                  {expense.status}
+                  {getStatusLabel(expense.status)}
                 </Badge>
               </div>
             </div>

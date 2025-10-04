@@ -7,8 +7,8 @@ async function listPendingApprovals(user) {
   const res = await db.query(
     `SELECT ea.id, ea.expense_id, ea.sequence, ea.is_mandatory,
             ea.decision, ea.comments, ea.decided_at,
-            e.description, e.amount, e.currency, e.status,
-            e.expense_date, e.employee_id,
+            e.description, e.category, e.amount, e.currency, e.status,
+            e.expense_date, e.employee_id, e.original_amount, e.original_currency,
             u.name AS employee_name, u.email AS employee_email
      FROM expense_approvals ea
      JOIN expenses e ON e.id = ea.expense_id
