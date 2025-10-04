@@ -499,6 +499,11 @@ CREATE TABLE approval_rules (
 
     ---
 
-    ## License
+## 👥 Team
 
-    Add a LICENSE file to the repo to state project terms. Currently no license is included.
+- **Parth Srivastava** - 23bce216@nirmauni.ac.in
+- **Harsh Shah** - 23bce089@nirmauni.ac.in
+- **Rudra Moradiya** - 23bce187@nirmauni.ac.in
+- **Advait Pandya** - 23bce012@nirmauni.ac.in
+
+---
