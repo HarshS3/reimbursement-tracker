@@ -110,22 +110,22 @@ const Settings = () => {
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Department</label>
-          <select className="luxury-input w-full">
-            <option>Finance</option>
-            <option>Sales</option>
-            <option>Marketing</option>
-            <option>Engineering</option>
-            <option>HR</option>
-            <option>Operations</option>
+          <select className="luxury-select w-full appearance-none cursor-pointer">
+            <option className="bg-[#1e293b] text-white">Finance</option>
+            <option className="bg-[#1e293b] text-white">Sales</option>
+            <option className="bg-[#1e293b] text-white">Marketing</option>
+            <option className="bg-[#1e293b] text-white">Engineering</option>
+            <option className="bg-[#1e293b] text-white">HR</option>
+            <option className="bg-[#1e293b] text-white">Operations</option>
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Manager</label>
-          <select className="luxury-input w-full">
-            <option>John Smith</option>
-            <option>Sarah Johnson</option>
-            <option>Michael Chen</option>
-            <option>Emily Rodriguez</option>
+          <select className="luxury-select w-full appearance-none cursor-pointer">
+            <option className="bg-[#1e293b] text-white">John Smith</option>
+            <option className="bg-[#1e293b] text-white">Sarah Johnson</option>
+            <option className="bg-[#1e293b] text-white">Michael Chen</option>
+            <option className="bg-[#1e293b] text-white">Emily Rodriguez</option>
           </select>
         </div>
       </div>
@@ -311,33 +311,33 @@ const Settings = () => {
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Industry</label>
-          <select className="luxury-input w-full" defaultValue={company?.industry || ''}>
-            <option>Technology</option>
-            <option>Finance</option>
-            <option>Healthcare</option>
-            <option>Manufacturing</option>
-            <option>Retail</option>
-            <option>Other</option>
+          <select className="luxury-select w-full appearance-none cursor-pointer" defaultValue={company?.industry || ''}>
+            <option className="bg-[#1e293b] text-white">Technology</option>
+            <option className="bg-[#1e293b] text-white">Finance</option>
+            <option className="bg-[#1e293b] text-white">Healthcare</option>
+            <option className="bg-[#1e293b] text-white">Manufacturing</option>
+            <option className="bg-[#1e293b] text-white">Retail</option>
+            <option className="bg-[#1e293b] text-white">Other</option>
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Company Size</label>
-          <select className="luxury-input w-full">
-            <option>1-10 employees</option>
-            <option>11-50 employees</option>
-            <option>51-200 employees</option>
-            <option>201-1000 employees</option>
-            <option>1000+ employees</option>
+          <select className="luxury-select w-full appearance-none cursor-pointer">
+            <option className="bg-[#1e293b] text-white">1-10 employees</option>
+            <option className="bg-[#1e293b] text-white">11-50 employees</option>
+            <option className="bg-[#1e293b] text-white">51-200 employees</option>
+            <option className="bg-[#1e293b] text-white">201-1000 employees</option>
+            <option className="bg-[#1e293b] text-white">1000+ employees</option>
           </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-white mb-2">Base Currency</label>
-          <select className="luxury-input w-full" defaultValue={company?.currency || ''}>
-            <option value="USD">USD - US Dollar</option>
-            <option value="EUR">EUR - Euro</option>
-            <option value="GBP">GBP - British Pound</option>
-            <option value="JPY">JPY - Japanese Yen</option>
-            <option value="CAD">CAD - Canadian Dollar</option>
+          <select className="luxury-select w-full appearance-none cursor-pointer" defaultValue={company?.currency || ''}>
+            <option value="USD" className="bg-[#1e293b] text-white">USD - US Dollar</option>
+            <option value="EUR" className="bg-[#1e293b] text-white">EUR - Euro</option>
+            <option value="GBP" className="bg-[#1e293b] text-white">GBP - British Pound</option>
+            <option value="JPY" className="bg-[#1e293b] text-white">JPY - Japanese Yen</option>
+            <option value="CAD" className="bg-[#1e293b] text-white">CAD - Canadian Dollar</option>
           </select>
         </div>
         <div className="md:col-span-2">

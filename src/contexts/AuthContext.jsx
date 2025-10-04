@@ -156,6 +156,18 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('claimdoo_company');
   };
 
+  // Mock forgot password - simulate sending reset email
+  const forgotPassword = async (email) => {
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Always return success for demo
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: 'Unable to send reset email' };
+    }
+  };
+
   const updateUser = (userData) => {
     const updatedUser = { ...user, ...userData };
     setUser(updatedUser);
@@ -177,6 +189,7 @@ export const AuthProvider = ({ children }) => {
     signOut,
     updateUser,
     updateCompany,
+    forgotPassword,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'admin',
     isManager: user?.role === 'manager',

@@ -274,10 +274,10 @@ const SignUp = () => {
                     name="country"
                     value={formData.country}
                     onChange={handleChange}
-                    className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white focus:outline-none focus:ring-1 transition-all appearance-none cursor-pointer ${
+                    className={`luxury-select w-full ${
                       errors.country 
                         ? 'border-red-400 focus:border-red-400 focus:ring-red-400/20' 
-                        : 'border-white/10 focus:border-primary-400 focus:ring-primary-400/20'
+                        : 'focus:border-primary-400 focus:ring-primary-400/20'
                     }`}
                     required
                   >

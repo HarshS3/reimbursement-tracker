@@ -149,25 +149,7 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Quick Actions for Employees */}
-      {isEmployee && (
-        <Card>
-          <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button 
-              onClick={() => setShowExpenseForm(true)}
-              className="flex items-center"
-            >
-              <Plus size={20} className="mr-2" />
-              Submit New Expense
-            </Button>
-            <Button variant="secondary">
-              <Receipt size={20} className="mr-2" />
-              View My Expenses
-            </Button>
-          </div>
-        </Card>
-      )}
+      {/* Quick Actions removed for employees per latest UX request */}
 
       {/* Recent Activity */}
       <Card>
@@ -220,7 +202,15 @@ const Dashboard = () => {
       case 'approvals':
         return <ApprovalQueue onRefresh={loadExpenses} />;
       case 'submit':
-        return <ExpenseSubmissionForm onSuccess={loadExpenses} />;
+        return (
+          <ExpenseSubmissionForm 
+            onClose={() => setActiveTab('overview')} 
+            onSuccess={() => {
+              loadExpenses();
+              setActiveTab('my-expenses');
+            }} 
+          />
+        );
       default:
         return renderOverview();
     }

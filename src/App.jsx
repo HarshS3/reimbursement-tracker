@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AuthProvider } from './contexts/AuthContext';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Layout Components
 import Layout from './components/layout/Layout';
@@ -57,6 +58,11 @@ function App() {
               <Route path="/signup" element={
                 <PageTransition>
                   <SignUp />
+                </PageTransition>
+              } />
+              <Route path="/forgot-password" element={
+                <PageTransition>
+                  <ForgotPassword />
                 </PageTransition>
               } />
               <Route path="/dashboard" element={

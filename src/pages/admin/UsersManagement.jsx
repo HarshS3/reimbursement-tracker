@@ -293,7 +293,7 @@ const UsersManagement = () => {
                       className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all appearance-none cursor-pointer"
                     >
                       {roles.map(role => (
-                        <option key={role} value={role} className="bg-[#1e293b]">
+                        <option key={role} value={role} className="bg-[#1e293b] text-white">
                           {role}
                         </option>
                       ))}
@@ -316,7 +316,7 @@ const UsersManagement = () => {
                           Select a manager
                         </option>
                         {managers.map(manager => (
-                          <option key={manager} value={manager} className="bg-[#1e293b]">
+                          <option key={manager} value={manager} className="bg-[#1e293b] text-white">
                             {manager}
                           </option>
                         ))}

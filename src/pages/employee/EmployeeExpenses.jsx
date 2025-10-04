@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../../components/ui';
 import { 
-  Upload, 
+  Upload,
   Plus,
   Image as ImageIcon,
   X,
@@ -332,39 +332,90 @@ const EmployeeExpenses = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="w-full max-w-2xl"
             >
-              <Card className="p-6">
+              {showUploadModal === 'minimized' ? (
+                <Card className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-white/80 text-sm">Upload Receipt (minimized)</div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowUploadModal(true)}
+                        className="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 text-sm"
+                      >
+                        Restore
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowUploadModal(false);
+                          setSelectedFile(null);
+                          setPreviewUrl(null);
+                          setOcrData(null);
+                        }}
+                        className="p-1 hover:bg-white/10 rounded-lg"
+                      >
+                        <X size={18} className="text-white/70" />
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              ) : (
+              <Card className="p-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-light text-white">Upload Receipt</h2>
-                  <button
-                    onClick={() => {
-                      setShowUploadModal(false);
-                      setSelectedFile(null);
-                      setPreviewUrl(null);
-                      setOcrData(null);
-                    }}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <X size={24} className="text-white/70" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowUploadModal('minimized')}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 text-sm"
+                    >
+                      Minimize
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowUploadModal(false);
+                        setSelectedFile(null);
+                        setPreviewUrl(null);
+                        setOcrData(null);
+                      }}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <X size={24} className="text-white/70" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
                   {/* File Upload Area */}
                   {!previewUrl ? (
-                    <label className="block">
+                    <>
+                    <label className="block" htmlFor="receipt-upload-input">
                       <div className="border-2 border-dashed border-white/20 rounded-xl p-12 text-center hover:border-primary-400/50 transition-colors cursor-pointer">
                         <ImageIcon size={48} className="text-white/40 mx-auto mb-4" />
                         <p className="text-white/90 mb-2">Click to upload receipt</p>
                         <p className="text-white/50 text-sm">or drag and drop</p>
                         <p className="text-white/40 text-xs mt-2">PNG, JPG up to 10MB</p>
                       </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
                     </label>
+                    <input
+                      type="file"
+                      id="receipt-upload-input"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowUploadModal(false);
+                          setSelectedFile(null);
+                          setPreviewUrl(null);
+                          setOcrData(null);
+                        }}
+                        className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all duration-200 font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    </>
                   ) : (
                     <div className="space-y-4">
                       {/* Preview */}
@@ -432,11 +483,11 @@ const EmployeeExpenses = () => {
                               <select
                                 value={newExpense.category}
                                 onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 transition-all appearance-none"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all appearance-none cursor-pointer"
                               >
-                                <option value="" className="bg-[#1e293b]">Select category</option>
+                                <option value="" className="bg-[#1e293b] text-white/70">Select category</option>
                                 {categories.map(cat => (
-                                  <option key={cat} value={cat} className="bg-[#1e293b]">{cat}</option>
+                                  <option key={cat} value={cat} className="bg-[#1e293b] text-white">{cat}</option>
                                 ))}
                               </select>
                             </div>
@@ -495,10 +546,36 @@ const EmployeeExpenses = () => {
                           </div>
                         </form>
                       )}
+
+                      {/* Footer actions when preview exists */}
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUploadModal(false);
+                            setSelectedFile(null);
+                            setPreviewUrl(null);
+                            setOcrData(null);
+                          }}
+                          className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl transition-all duration-200 font-medium"
+                        >
+                          Cancel
+                        </button>
+                        {ocrData && (
+                          <button
+                            type="button"
+                            onClick={() => handleSubmitExpense('Submitted')}
+                            className="flex-1 px-4 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl transition-all duration-300 font-medium"
+                          >
+                            Submit for Approval
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
               </Card>
+              )}
             </motion.div>
           </div>
         )}
@@ -565,11 +642,11 @@ const EmployeeExpenses = () => {
                       <select
                         value={newExpense.category}
                         onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 transition-all appearance-none"
+                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/20 transition-all appearance-none cursor-pointer"
                       >
-                        <option value="" className="bg-[#1e293b]">Select category</option>
+                        <option value="" className="bg-[#1e293b] text-white/70">Select category</option>
                         {categories.map(cat => (
-                          <option key={cat} value={cat} className="bg-[#1e293b]">{cat}</option>
+                          <option key={cat} value={cat} className="bg-[#1e293b] text-white">{cat}</option>
                         ))}
                       </select>
                     </div>
