@@ -1,3 +1,220 @@
+# Claimdoo — Expense & Claims Management
+
+Claimdoo is a full-stack expense and claims management application. This repository includes two main parts:
+
+- `Backend/` — Node.js + Express API built to work with PostgreSQL using plain SQL migrations and a connection pool.
+- `Frontend/` — Vite + React frontend application that consumes the backend API.
+
+This README walks through repository layout, local setup, migrations, running the app, troubleshooting, and next steps for contributors.
+
+## Table of contents
+
+- Project structure
+- Requirements
+- Backend
+  - Environment variables
+  - Install dependencies
+  - Running migrations
+  - Start server
+- Frontend
+  - Environment variables
+  - Install dependencies
+  - Start dev server
+- Running the full stack (dev)
+- Testing & health checks
+- Deployment notes
+- Contributing
+- License
+
+---
+
+## Project structure
+
+Top-level layout:
+
+```
+.
+├─ .env                 # Optional project-wide environment file
+├─ Backend/
+│  ├─ migrations/       # Ordered SQL migration files (000_..., 001_..., ...)
+│  └─ src/
+│     ├─ app.js         # Express app configuration
+│     ├─ server.js      # Entrypoint
+│     ├─ config/env.js  # Environment helpers
+│     ├─ db/
+│     │  ├─ pool.js     # Postgres connection pool
+│     │  └─ transaction.js
+│     ├─ controllers/
+│     ├─ services/
+│     ├─ routes/
+│     ├─ middlewares/
+│     └─ scripts/
+│        └─ runMigrations.js
+└─ Frontend/
+   ├─ index.html
+   ├─ package.json
+   └─ src/
+      ├─ api/client.js  # Axios/fetch client configured to talk to backend
+      ├─ pages/
+      ├─ components/
+      └─ contexts/
+```
+
+The backend is organized in a familiar Express MVC-style layout with migration SQL files to provision the database schema.
+
+---
+
+## Requirements
+
+- Node.js (v18+ recommended)
+- npm or yarn
+- PostgreSQL (local or hosted) — the migrations are written for Postgres
+- Optional: Docker (for running Postgres locally)
+
+---
+
+## Backend
+
+The backend lives in `Backend/` and expects a Postgres database. It uses a connection pool (`src/db/pool.js`) and includes migration SQL files in `Backend/migrations/`.
+
+### Environment variables (Backend)
+
+Create a `Backend/.env` or set environment variables in your shell. Important variables:
+
+```
+PORT=4000
+NODE_ENV=development
+DATABASE_URL=postgres://<user>:<password>@<host>:5432/<db_name>
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRE=7d
+```
+
+Notes:
+- `DATABASE_URL` is used by `src/db/pool.js` to connect to Postgres. Adjust host, port, user, and password accordingly.
+
+### Install dependencies
+
+```powershell
+cd Backend
+npm install
+```
+
+### Run migrations
+
+There are SQL migration files in `Backend/migrations/`. You can run them manually with `psql` or use the provided Node.js runner.
+
+Programmatic runner (recommended for convenience in dev):
+
+```powershell
+cd Backend
+node src/scripts/runMigrations.js
+```
+
+This script executes the migration SQL files (in order) against the `DATABASE_URL` configured in your environment.
+
+### Start the backend
+
+```powershell
+cd Backend
+npm run start
+# or for development with auto-reload (if dev script exists)
+npm run dev
+```
+
+The API base path is `/api`. Check `src/routes/index.js` to view all registered routes.
+
+---
+
+## Frontend
+
+The frontend is a Vite + React app located in `Frontend/`. It communicates with the backend API via `src/api/client.js`.
+
+### Environment variables (Frontend)
+
+Create `Frontend/.env` (Vite loads variables prefixed with `VITE_`):
+
+```
+VITE_API_BASE_URL=http://localhost:4000/api
+```
+
+Make sure the `VITE_API_BASE_URL` matches your backend URL.
+
+### Install dependencies and start
+
+```powershell
+cd Frontend
+npm install
+npm run dev
+```
+
+The frontend dev server will usually run on `http://localhost:5173`.
+
+---
+
+## Running the full stack (dev)
+
+Quick example using Docker to run Postgres:
+
+```powershell
+# Run Postgres container for development
+docker run -e POSTGRES_PASSWORD=example -e POSTGRES_DB=claimdoo_dev -p 5432:5432 -d postgres:15
+
+# In Backend/ set DATABASE_URL to postgres://postgres:example@localhost:5432/claimdoo_dev
+# Run migrations
+cd Backend
+node src/scripts/runMigrations.js
+# Start backend
+npm run start
+
+# In a new terminal start frontend
+cd Frontend
+npm run dev
+```
+
+Visit the frontend at `http://localhost:5173` and interact with the UI. The UI will call backend endpoints using `VITE_API_BASE_URL`.
+
+---
+
+## Health checks & testing
+
+- The backend exposes health/diagnostic endpoints (look for `/api/health` or similar in `src/routes`).
+- Use Postman or curl to test endpoints and JWT-protected routes. Example login request:
+
+```powershell
+curl -X POST "http://localhost:4000/api/auth/login" -H "Content-Type: application/json" -d '{"email":"demo@example.com","password":"password"}'
+```
+
+---
+
+## Deployment notes
+
+- Use CI/CD to run migrations before starting the backend service in production.
+- Do not commit secrets — rely on environment variables or secret managers.
+- Consider storing receipts in an object storage (S3, Azure Blob) and saving file URLs to the DB.
+
+---
+
+## Contributing
+
+Contributions are welcome. Please follow these guidelines:
+
+1. Open an issue for non-trivial changes.
+2. Create a feature branch and target it with a pull request.
+3. For DB schema changes, add a migration SQL file in `Backend/migrations/` with a new incremental filename.
+
+---
+
+## Next steps / TODOs
+
+- Add automated tests (unit + integration).
+- Add CI pipeline to run migrations and tests.
+- Add production-grade configuration for file storage and secrets management.
+
+---
+
+## License
+
+This repository does not include a license. Add a LICENSE file to clarify usage terms.
 # Expense Management System – Frontend Specification (Currently under Developement)
 # Expense Management System – Backend Specification
 
@@ -78,239 +295,210 @@ CREATE TABLE users (
 CREATE TABLE approval_rules (
     id SERIAL PRIMARY KEY,
     company_id INT REFERENCES companies(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    is_manager_approver BOOLEAN DEFAULT FALSE,
-    min_approval_percentage NUMERIC(5,2),
-    created_at TIMESTAMP DEFAULT NOW()
-);
+    # Claimdoo — Expense & Claims Management
 
-CREATE TABLE rule_approvers (
-    id SERIAL PRIMARY KEY,
-    rule_id INT REFERENCES approval_rules(id) ON DELETE CASCADE,
-    approver_id INT REFERENCES users(id) ON DELETE CASCADE,
-    sequence INT,
-    is_mandatory BOOLEAN DEFAULT FALSE
-);
-```
+    Claimdoo is a full-stack expense and claims management application. This repository contains two main parts:
 
-### Expenses
-```sql
-CREATE TABLE expenses (
-  id SERIAL PRIMARY KEY,
-  employee_id INT REFERENCES users(id) ON DELETE CASCADE,
-  rule_id INT REFERENCES approval_rules(id) ON DELETE SET NULL,
-    description TEXT NOT NULL,
-    category VARCHAR(100),
-    expense_date DATE NOT NULL,
-    paid_by VARCHAR(100),
-    remarks TEXT,
-    amount NUMERIC(12,2) NOT NULL,
-    currency VARCHAR(10) NOT NULL,
-    status VARCHAR(50) CHECK (status IN ('Draft','Waiting Approval','Approved','Rejected')) DEFAULT 'Draft',
-    created_at TIMESTAMP DEFAULT NOW()
-);
-```
+    - `Backend/` — Node.js + Express API, PostgreSQL-backed with ordered SQL migrations in `Backend/migrations/`.
+    - `Frontend/` — Vite + React application that consumes the backend API.
 
-### Expense Approvals
-```sql
-CREATE TABLE expense_approvals (
-    id SERIAL PRIMARY KEY,
-    expense_id INT REFERENCES expenses(id) ON DELETE CASCADE,
-    approver_id INT REFERENCES users(id) ON DELETE CASCADE,
-  sequence INT,
-  is_mandatory BOOLEAN DEFAULT FALSE,
-    decision VARCHAR(20) CHECK (decision IN ('Approved','Rejected','Pending')) DEFAULT 'Pending',
-    comments TEXT,
-    decided_at TIMESTAMP
-);
-```
+    This README consolidates: project layout, database migrations, local setup, developer workflows, and a high-level API reference to help you get started.
 
-### Receipts (OCR Support)
-```sql
-CREATE TABLE receipts (
-    id SERIAL PRIMARY KEY,
-    expense_id INT REFERENCES expenses(id) ON DELETE CASCADE,
-    file_url TEXT NOT NULL,
-    ocr_text TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-```
+    ---
 
-## API Surface (High-Level)
+    ## Quick start (dev)
 
-### Auth
-- `POST /auth/signup` – Create a company and admin user.
-- `POST /auth/login` – JWT-based login.
-- `POST /auth/forgot-password` – Initiate password reset flow.
+    1. Start a Postgres instance (local or Docker).
+    2. Configure `Backend/DATABASE_URL` environment variable.
+    3. Run backend migrations and start the backend.
+    4. Start the frontend dev server and open the UI in your browser.
 
-#### `POST /api/auth/signup`
+    See the sections below for exact commands and notes.
 
-Creates a new company and its first admin user. Both the company ID and user ID are generated automatically by the database.
+    ---
 
-**Request body**
+    ## Project layout
 
-```json
-{
-  "companyName": "Acme Corp",
-  "baseCurrency": "USD",
-  "country": "United States",
-  "adminName": "Jane Doe",
-  "email": "jane.doe@example.com",
-  "password": "Sup3rSecret!"
-}
-```
+    ```
+    .
+    ├─ .env                 # Optional project-wide environment file
+    ├─ Backend/
+    │  ├─ migrations/       # SQL migration files (000_..., 001_..., ...)
+    │  └─ src/
+    │     ├─ app.js
+    │     ├─ server.js
+    │     ├─ config/
+    │     ├─ db/
+    │     ├─ controllers/
+    │     ├─ services/
+    │     ├─ routes/
+    │     ├─ middlewares/
+    │     └─ scripts/runMigrations.js
+    └─ Frontend/
+       ├─ index.html
+       ├─ package.json
+       └─ src/
+          ├─ api/client.js
+          ├─ pages/
+          ├─ components/
+          └─ contexts/
+    ```
 
-**Response snapshot**
+    ---
 
-```json
-{
-  "success": true,
-  "company": {
-    "id": 1,
-    "name": "Acme Corp",
-    "baseCurrency": "USD",
-    "country": "United States",
-    "createdAt": "2025-10-04T12:00:00.000Z"
-  },
-  "user": {
-    "id": 1,
-    "companyId": 1,
-    "name": "Jane Doe",
-    "email": "jane.doe@example.com",
-    "role": "Admin",
-    "managerId": null,
-    "createdAt": "2025-10-04T12:00:00.000Z"
-  },
-  "token": "<JWT>"
-}
-```
+    ## Prerequisites
 
-### Users (Admin only)
-- `POST /users` – Create employees or managers.
-- `PATCH /users/:id` – Update role or manager assignment.
-- `GET /users` – List company users.
+    - Node.js (v18+ recommended)
+    - npm or yarn
+    - PostgreSQL (local or managed)
+    - Optional: Docker (for Postgres in dev)
 
-### Approval Rules (Admin only)
-- `POST /rules` – Create approval rules.
-- `POST /rules/:id/approvers` – Assign approvers to a rule.
-- `GET /rules` – List rules.
+    ---
 
-### Expenses (Employee)
-- `POST /expenses` – Submit new expense or save draft.
-- `PATCH /expenses/:id` – Update draft expenses.
-- `GET /expenses` – List employee expenses.
+    ## Backend — setup & run
 
-### Approvals (Manager/Admin)
-- `GET /approvals` – View pending approvals for the logged-in user.
-- `PATCH /approvals/:id` – Approve/reject with comments.
+    1. Open a terminal and install dependencies:
 
-## API Reference
+    ```powershell
+    cd Backend
+    npm install
+    ```
 
-All endpoints are prefixed with `/api`. Authenticated routes expect a `Bearer <token>` header.
+    2. Create a `.env` file for the backend (or export env vars). Required values:
 
-| Method & Path | Auth | Roles | Description |
-|---------------|------|-------|-------------|
-| `POST /api/auth/signup` | No | – | Create company + admin user, returns JWT. |
-| `POST /api/auth/login` | No | – | Login and receive JWT. |
-| `POST /api/auth/forgot-password` | No | – | Initiate reset flow (stub implementation). |
-| `GET /api/users` | Yes | Admin | List company users. |
-| `POST /api/users` | Yes | Admin | Create employee or manager. |
-| `PATCH /api/users/:id` | Yes | Admin | Update role, name, or manager. |
-| `GET /api/rules` | Yes | Admin | List approval rules with approvers. |
-| `POST /api/rules` | Yes | Admin | Create approval rule. |
-| `POST /api/rules/:id/approvers` | Yes | Admin | Replace approver assignments for a rule. |
-| `GET /api/expenses` | Yes | Employee/Manager/Admin | List expenses visible to requester (own/team/company). |
-| `POST /api/expenses` | Yes | Employee/Admin | Create new expense (draft or submit for approval). |
-| `GET /api/expenses/:id` | Yes | Employee/Manager/Admin | Retrieve expense details with receipts and approval trail. |
-| `PATCH /api/expenses/:id` | Yes | Employee/Admin | Update draft, receipts, or submit for approval. |
-| `GET /api/approvals` | Yes | Manager/Admin | List pending approvals assigned to user. |
-| `PATCH /api/approvals/:id` | Yes | Manager/Admin | Approve or reject an expense. |
+    ```
+    PORT=4000
+    NODE_ENV=development
+    DATABASE_URL=postgres://<user>:<password>@<host>:5432/<db_name>
+    JWT_SECRET=your_jwt_secret_here
+    JWT_EXPIRE=7d
+    ```
 
-## Workflow Example
+    3. Run migrations (the repo includes migration SQL files in `Backend/migrations/`):
 
-1. **Signup** – Company "ABC Corp" (base currency USD) with Admin Mark.
-2. **Admin adds roles** – Sarah (Manager), John (Employee, `manager_id = Sarah`).
-3. **Rule definition** – "Misc Expenses" with approvers Sarah (sequence 1) and Mark (sequence 2).
-4. **Expense submission** – John submits €200 marked `Waiting Approval`.
-5. **Approval tasks** – Sarah and Mark receive pending approvals.
-6. **Manager approval** – Sarah approves; expense remains `Waiting Approval` pending Mark.
-7. **Final approval** – Mark approves; expense transitions to `Approved`.
+    ```powershell
+    cd Backend
+    node src/scripts/runMigrations.js
+    ```
 
-## Tech Stack
+    The script executes SQL files against the `DATABASE_URL`. You may also run migrations manually with `psql`.
 
-- **Runtime:** Node.js (Express)
-- **Database:** PostgreSQL
-- **Auth:** JWT
-- **External APIs:**
-  - Country & currency lookup – `https://restcountries.com/v3.1/all?fields=name,currencies`
-  - FX conversion – `https://api.exchangerate-api.com/v4/latest/{BASE_CURRENCY}`
+    4. Start the backend API:
 
-## Project Structure
+    ```powershell
+    cd Backend
+    npm run start
+    # or in development (if a dev script exists):
+    npm run dev
+    ```
 
-```
-├── migrations/
-│   ├── 000_create_database.sql
-│   └── 001_init_schema.sql
-├── src/
-│   ├── config/
-│   │   └── env.js
-│   ├── controllers/
-│   ├── db/
-│   │   └── pool.js
-│   ├── middlewares/
-│   │   ├── errorHandler.js
-│   │   └── notFound.js
-│   ├── routes/
-│   │   └── index.js
-│   ├── services/
-│   ├── utils/
-│   ├── app.js
-│   └── server.js
-└── package.json
-```
+    The API prefix is `/api`. Confirm the server is running with the health endpoint (if present), e.g. `http://localhost:4000/api/health`.
 
-## Getting Started
+    ---
 
-### Environment Variables
+    ## Frontend — setup & run
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | HTTP port for the API server. | `4000` |
-| `NODE_ENV` | Node environment string. | `development` |
-| `DATABASE_URL` | PostgreSQL connection string. Required for DB access. | _(empty)_ |
-| `JWT_SECRET` | Secret used to sign JWT access tokens. | _(none)_ |
+    1. Install dependencies and start the dev server:
 
-### Setup Steps
+    ```powershell
+    cd Frontend
+    npm install
+    npm run dev
+    ```
 
-1. **Install dependencies**
-  ```bash
-  npm install
-  ```
-2. **Configure environment**
-  - Copy `.env.example` to `.env` and fill in values (database URL & JWT secret are required for full functionality).
-3. **Provision database**
-  ```bash
-  psql -h <host> -U <username> -f migrations/000_create_database.sql
-  psql -d ClaimDoo -f migrations/001_init_schema.sql
-  psql -d ClaimDoo -f migrations/002_add_company_country.sql
-  ```
-  4. **Ensure PostgreSQL is running** – start your database server locally or ensure the remote instance is reachable from the machine running the API.
-  5. **Run migrations programmatically (optional)** – use the provided script (skips `000_create_database.sql`) or run the SQL manually:
-  ```bash
-  npm run migrate
-  ```
-  6. **Start the API**
-  ```bash
-  npm run dev
-  ```
-  7. **Health check** – open `http://localhost:4000/api/health` to confirm the service is live. The server logs a warning if the database is unreachable at startup; database-backed routes will fail until connectivity is restored.
+    2. Environment variable (Vite): create `Frontend/.env` and set:
 
-## Next Steps
+    ```
+    VITE_API_BASE_URL=http://localhost:4000/api
+    ```
 
-- Integrate secure file storage for receipts (S3, Azure Blob, etc.) and connect OCR pipeline.
-- Wire up currency conversion service at approval time to display totals in base currency.
-- Add automated tests (unit + integration) and CI workflow.
-- Consider audit logging and notifications (email/slack) for approval events.
+    Open `http://localhost:5173` (default Vite port) and verify the app can communicate with the backend.
 
-This specification should give GitHub Copilot or any developer complete context to begin implementing the backend services quickly.
+    ---
+
+    ## Run with Docker (Postgres example)
+
+    ```powershell
+    docker run -e POSTGRES_PASSWORD=example -e POSTGRES_DB=claimdoo_dev -p 5432:5432 -d postgres:15
+
+    # set DATABASE_URL to: postgres://postgres:example@localhost:5432/claimdoo_dev
+    cd Backend
+    node src/scripts/runMigrations.js
+    npm run start
+
+    cd ../Frontend
+    npm run dev
+    ```
+
+    ---
+
+    ## Database & migrations
+
+    SQL migrations live in `Backend/migrations/`. The recommended workflow for schema changes:
+
+    1. Add a new SQL file with an incremental prefix (e.g. `004_add_new_table.sql`).
+    2. Commit the migration and update any corresponding server logic.
+    3. Ensure migrations run as part of your CI/CD or release process.
+
+    ---
+
+    ## High-level API reference
+
+    All API endpoints are prefixed with `/api` and protected endpoints require a `Bearer <token>` JWT header.
+
+    Auth
+    - `POST /api/auth/signup` — create a company and admin user
+    - `POST /api/auth/login` — return JWT
+
+    Users (admin)
+    - `GET /api/users` — list users
+    - `POST /api/users` — create user
+    - `PATCH /api/users/:id` — update user
+
+    Rules (admin)
+    - `GET /api/rules` — list approval rules
+    - `POST /api/rules` — create rule
+    - `POST /api/rules/:id/approvers` — assign approvers
+
+    Expenses (employee)
+    - `POST /api/expenses` — create or submit expense
+    - `PATCH /api/expenses/:id` — update draft
+    - `GET /api/expenses` — list expenses
+
+    Approvals (manager/admin)
+    - `GET /api/approvals` — pending approvals
+    - `PATCH /api/approvals/:id` — approve or reject
+
+    Refer to the backend routes in `Backend/src/routes/` for exact definitions and input/output shapes.
+
+    ---
+
+    ## Health checks & testing
+
+    - Use the backend health endpoint (if present) to confirm the server is running.
+    - Use Postman or curl for API testing. Example login request:
+
+    ```powershell
+    curl -X POST "http://localhost:4000/api/auth/login" -H "Content-Type: application/json" -d '{"email":"demo@example.com","password":"password"}'
+    ```
+
+    ---
+
+    ## Deployment notes
+
+    - Run database migrations during CI/CD or a pre-release step.
+    - Keep secrets out of source control; use environment variables or secret stores.
+    - For receipts and large files, use cloud object storage (S3/Azure Blob) and store URLs in the DB.
+
+    ---
+
+    ## Contributing
+
+    - Open issues for proposed changes.
+    - Create feature branches and include migration files for DB changes.
+
+    ---
+
+    ## License
+
+    Add a LICENSE file to the repo to state project terms. Currently no license is included.
