@@ -260,3 +260,10 @@ All API routes are prefixed with \`/api\`.
 | Rudra Moradiya | 23bce187@nirmauni.ac.in |
 | Advait Pandya | 23bce012@nirmauni.ac.in |
 
+--- 
+
+## 🎥 Demo Video
+Watch a quick demo here: [GDrive Link](https://drive.google.com/drive/folders/1VCKeC3nTcfICLd6bbgAL_1jti2VZYKPs?usp=sharing) 
+
+
+---
